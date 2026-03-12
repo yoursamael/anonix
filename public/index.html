@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Anonymous Chat</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+<h2>Anonymous Chat</h2>
+<div id="online">Users Online: 0</div>
+</header>
+
+<div id="setup" class="setup">
+
+<label>Your Gender</label>
+<select id="gender">
+<option value="male">Male</option>
+<option value="female">Female</option>
+</select>
+
+<label>Interested In</label>
+<select id="preference">
+<option value="male">Male</option>
+<option value="female">Female</option>
+<option value="both">Both</option>
+</select>
+
+<button onclick="startChat()">Start Chat</button>
+
+</div>
+
+<div id="chat" class="chat" style="display:none">
+
+<div id="messages"></div>
+
+<div id="typing"></div>
+
+<div class="input-bar">
+
+<input id="msg" placeholder="Type message">
+
+<button onclick="sendMsg()">Send</button>
+
+<input type="file" id="imgInput">
+
+<button onclick="sendImage()">Image</button>
+
+<button onclick="skip()" class="next">Skip</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>

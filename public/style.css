@@ -1,0 +1,186 @@
+body{
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
+background:#0f172a;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+/* APP CONTAINER */
+
+.app{
+width:420px;
+height:650px;
+background:#020617;
+border-radius:12px;
+display:flex;
+flex-direction:column;
+overflow:hidden;
+box-shadow:0 0 20px rgba(0,0,0,0.5);
+}
+
+/* HEADER */
+
+header{
+text-align:center;
+padding:15px;
+border-bottom:1px solid #1e293b;
+}
+
+#online{
+font-size:13px;
+opacity:0.7;
+margin-top:4px;
+}
+
+/* SETUP SCREEN */
+
+.setup{
+padding:25px;
+display:flex;
+flex-direction:column;
+gap:12px;
+}
+
+.setup select{
+padding:10px;
+border-radius:6px;
+border:none;
+background:#1e293b;
+color:white;
+}
+
+.setup button{
+padding:12px;
+border:none;
+border-radius:6px;
+background:#2563eb;
+color:white;
+font-weight:bold;
+cursor:pointer;
+transition:0.2s;
+}
+
+.setup button:hover{
+background:#1d4ed8;
+}
+
+/* CHAT AREA */
+
+.chat{
+display:flex;
+flex-direction:column;
+height:100%;
+}
+
+/* MESSAGE AREA */
+
+#messages{
+flex:1;
+overflow-y:auto;
+padding:15px;
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+/* MESSAGE BUBBLES */
+
+.me{
+align-self:flex-end;
+background:#22c55e;
+color:black;
+padding:10px 14px;
+border-radius:12px;
+max-width:70%;
+word-wrap:break-word;
+}
+
+.stranger{
+align-self:flex-start;
+background:#1e293b;
+padding:10px 14px;
+border-radius:12px;
+max-width:70%;
+word-wrap:break-word;
+}
+
+.system{
+text-align:center;
+font-size:12px;
+color:#94a3b8;
+}
+
+/* TYPING */
+
+#typing{
+font-size:12px;
+color:#94a3b8;
+padding-left:10px;
+min-height:16px;
+}
+
+/* INPUT BAR */
+
+.input-bar{
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+padding:10px;
+border-top:1px solid #1e293b;
+}
+
+#msg{
+flex:1;
+padding:10px;
+border-radius:6px;
+border:none;
+background:#1e293b;
+color:white;
+}
+
+button{
+padding:8px 12px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+background:#2563eb;
+color:white;
+transition:0.2s;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+/* SKIP BUTTON */
+
+.next{
+background:#ef4444;
+}
+
+.next:hover{
+background:#dc2626;
+}
+
+/* IMAGE STYLE */
+
+img{
+max-width:200px;
+border-radius:8px;
+margin-top:4px;
+}
+
+/* SCROLLBAR */
+
+#messages::-webkit-scrollbar{
+width:6px;
+}
+
+#messages::-webkit-scrollbar-thumb{
+background:#334155;
+border-radius:10px;
+}
