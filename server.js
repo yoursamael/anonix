@@ -238,6 +238,6 @@ io.emit("online",io.engine.clientsCount);
 
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT,()=>{
-console.log("Anonix server running");
+server.listen(PORT, () => {
+    console.log("Anonix server running on port " + PORT);
 });
