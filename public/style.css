@@ -1,6 +1,17 @@
-body{
+*{
+box-sizing:border-box;
+}
+
+html, body{
 margin:0;
+padding:0;
+width:100%;
+height:100%;
 font-family:Arial, Helvetica, sans-serif;
+overflow:hidden;
+}
+
+body{
 background:linear-gradient(135deg,#ff4d6d,#ff758f,#ff9aa2,#ffc2d1);
 background-size:400% 400%;
 animation:romanticBg 12s ease infinite;
@@ -8,8 +19,6 @@ color:white;
 display:flex;
 justify-content:center;
 align-items:center;
-height:100vh;
-overflow:hidden;
 }
 
 @keyframes romanticBg{
@@ -38,7 +47,7 @@ pointer-events:none;
 width:420px;
 height:650px;
 max-width:100vw;
-max-height:100vh;
+max-height:100dvh;
 background:rgba(2,6,23,0.85);
 backdrop-filter:blur(14px);
 border-radius:20px;
@@ -46,6 +55,7 @@ display:flex;
 flex-direction:column;
 overflow:hidden;
 box-shadow:0 20px 40px rgba(0,0,0,0.6);
+position:relative;
 }
 
 header{
@@ -65,6 +75,7 @@ padding:25px;
 display:flex;
 flex-direction:column;
 gap:12px;
+overflow:auto;
 }
 
 .setup select{
@@ -97,6 +108,7 @@ display:flex;
 flex-direction:column;
 flex:1;
 min-height:0;
+height:100%;
 }
 
 #messages{
@@ -107,6 +119,7 @@ padding:15px;
 display:flex;
 flex-direction:column;
 gap:10px;
+-webkit-overflow-scrolling:touch;
 }
 
 .me, .stranger{
@@ -130,7 +143,7 @@ background:#ff4d6d;
 color:white;
 padding:10px 14px;
 border-radius:14px;
-max-width:70%;
+max-width:78%;
 word-wrap:break-word;
 cursor:pointer;
 }
@@ -140,7 +153,7 @@ align-self:flex-start;
 background:#1e293b;
 padding:10px 14px;
 border-radius:14px;
-max-width:70%;
+max-width:78%;
 word-wrap:break-word;
 cursor:pointer;
 }
@@ -172,6 +185,7 @@ font-size:12px;
 color:#ffd1dc;
 padding:0 10px 6px 10px;
 min-height:16px;
+flex-shrink:0;
 }
 
 #replyBox{
@@ -181,6 +195,7 @@ gap:10px;
 padding:10px;
 background:#111827;
 border-left:4px solid #ff4d6d;
+flex-shrink:0;
 }
 
 #replyText{
@@ -201,24 +216,30 @@ gap:6px;
 padding:10px;
 border-top:1px solid rgba(255,255,255,0.1);
 background:#020617;
+flex-shrink:0;
+position:relative;
+z-index:2;
 }
 
 #msg{
-flex:1;
-padding:10px;
-border-radius:8px;
+flex:1 1 100%;
+min-width:0;
+padding:12px;
+border-radius:10px;
 border:none;
 background:#1e293b;
 color:white;
+font-size:16px;
 }
 
 #imgInput{
-max-width:110px;
+width:100%;
 color:white;
+font-size:13px;
 }
 
 button{
-padding:8px 12px;
+padding:10px 12px;
 border:none;
 border-radius:8px;
 cursor:pointer;
@@ -242,7 +263,8 @@ background:#dc2626;
 }
 
 img{
-max-width:200px;
+max-width:180px;
+width:100%;
 border-radius:10px;
 margin-top:4px;
 display:block;
@@ -257,22 +279,45 @@ background:#ff758f;
 border-radius:10px;
 }
 
-@media (max-width: 480px){
+/* MOBILE */
+
+@media (max-width: 768px){
 body{
 align-items:stretch;
+justify-content:stretch;
 }
 
 .app{
 width:100vw;
-height:100vh;
+height:100dvh;
+max-width:100vw;
+max-height:100dvh;
 border-radius:0;
 }
 
-#msg{
-flex:1 1 100%;
+header{
+padding:18px 12px;
+}
+
+#messages{
+padding:12px;
+}
+
+.me, .stranger{
+max-width:85%;
 }
 
 .input-bar{
-padding-bottom:14px;
+padding:8px;
+gap:8px;
+}
+
+button{
+flex:1 1 auto;
+min-height:42px;
+}
+
+#imgInput{
+font-size:12px;
 }
 }
