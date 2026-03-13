@@ -5,239 +5,235 @@ const helmet = require("helmet");
 
 const app = express();
 
-/* -------- HELMET FIX FOR SOCKET.IO -------- */
-
 app.use(
-helmet({
-contentSecurityPolicy:false
-})
+  helmet({
+    contentSecurityPolicy: false
+  })
 );
 
 const server = http.createServer(app);
 
-const io = new Server(server,{
-maxHttpBufferSize:1e6
+const io = new Server(server, {
+  maxHttpBufferSize: 1e6
 });
 
 app.use(express.static("public"));
 
-/* -------- QUEUES -------- */
-
-const queue = {
-male_female:[],
-female_male:[],
-male_both:[],
-female_both:[]
-};
-
-/* -------- RATE LIMIT -------- */
-
+const waiting = [];
 const messageLimit = new Map();
 
-/* -------- MATCH USER -------- */
+/*
+  users Map structure:
+  userId => Set of socket ids
+*/
+const users = new Map();
+const MAX_TABS_PER_USER = 3;
 
-function matchUser(socket){
-
-let partnerId = null;
-
-if(socket.gender==="male" && socket.preference==="female"){
-
-partnerId = queue.female_male.shift() || queue.female_both.shift();
-
+function removeFromWaiting(socketId) {
+  const index = waiting.findIndex((s) => s.id === socketId);
+  if (index !== -1) waiting.splice(index, 1);
 }
 
-else if(socket.gender==="female" && socket.preference==="male"){
-
-partnerId = queue.male_female.shift() || queue.male_both.shift();
-
+function compatible(a, b) {
+  const aLikesB = a.preference === "both" || a.preference === b.gender;
+  const bLikesA = b.preference === "both" || b.preference === a.gender;
+  return aLikesB && bLikesA;
 }
 
-else if(socket.preference==="both"){
-
-if(socket.gender==="male"){
-partnerId = queue.female_male.shift() || queue.female_both.shift();
-}
-else{
-partnerId = queue.male_female.shift() || queue.male_both.shift();
+function emitOnlineCount() {
+  io.emit("online", users.size);
 }
 
+function matchUser(socket) {
+  if (!socket || !socket.connected) return;
+  if (!socket.gender || !socket.preference) return;
+  if (socket.room) return;
+
+  removeFromWaiting(socket.id);
+
+  const partnerIndex = waiting.findIndex((user) => {
+    if (!user.connected) return false;
+    if (user.id === socket.id) return false;
+    if (user.userId === socket.userId) return false;
+    return compatible(socket, user);
+  });
+
+  if (partnerIndex !== -1) {
+    const partner = waiting.splice(partnerIndex, 1)[0];
+
+    if (!partner || !partner.connected) {
+      matchUser(socket);
+      return;
+    }
+
+    const room = `room-${socket.id}-${partner.id}`;
+
+    socket.join(room);
+    partner.join(room);
+
+    socket.room = room;
+    partner.room = room;
+
+    socket.partner = partner.id;
+    partner.partner = socket.id;
+
+    socket.emit("matched", room);
+    partner.emit("matched", room);
+
+    io.to(room).emit("system", "💞 You are now connected with someone special");
+  } else {
+    waiting.push(socket);
+    socket.emit("system", "Waiting for partner...");
+  }
 }
 
-if(partnerId){
+function rematchSocket(socket, reasonMessage = null) {
+  if (!socket || !socket.connected) return;
 
-const partner = io.sockets.sockets.get(partnerId);
+  if (socket.room) {
+    socket.leave(socket.room);
+  }
 
-if(!partner){
-addToQueue(socket);
-return;
+  socket.room = null;
+  socket.partner = null;
+
+  if (reasonMessage) {
+    socket.emit("system", reasonMessage);
+  }
+
+  setTimeout(() => {
+    if (socket.connected && socket.gender && socket.preference) {
+      matchUser(socket);
+    }
+  }, 400);
 }
 
-const room = "room-"+socket.id+"-"+partner.id;
+io.on("connection", (socket) => {
+  const userId = String(socket.handshake.query.userId || "");
 
-socket.join(room);
-partner.join(room);
+  if (!userId) {
+    socket.emit("system", "Invalid user session");
+    socket.disconnect(true);
+    return;
+  }
 
-socket.room = room;
-partner.room = room;
+  socket.userId = userId;
 
-socket.partner = partner.id;
-partner.partner = socket.id;
+  if (!users.has(userId)) {
+    users.set(userId, new Set());
+  }
 
-io.to(room).emit("system","Connected to stranger");
+  users.get(userId).add(socket.id);
 
-}
-else{
+  if (users.get(userId).size > MAX_TABS_PER_USER) {
+    socket.emit("tabLimitExceeded", `Maximum ${MAX_TABS_PER_USER} tabs allowed`);
+    users.get(userId).delete(socket.id);
+    if (users.get(userId).size === 0) {
+      users.delete(userId);
+    }
+    socket.disconnect(true);
+    emitOnlineCount();
+    return;
+  }
 
-addToQueue(socket);
+  emitOnlineCount();
 
-socket.emit("system","Waiting for partner...");
+  socket.on("start", ({ gender, preference }) => {
+    socket.gender = gender;
+    socket.preference = preference;
+    matchUser(socket);
+  });
 
-}
+  socket.on("message", ({ msg, replyTo }) => {
+    if (!socket.room) return;
+    if (!msg || !msg.trim()) return;
+    if (msg.length > 300) return;
 
-}
+    const now = Date.now();
+    const last = messageLimit.get(socket.id) || 0;
 
-/* -------- ADD TO QUEUE -------- */
+    if (now - last < 500) return;
+    messageLimit.set(socket.id, now);
 
-function addToQueue(socket){
+    socket.to(socket.room).emit("message", {
+      msg: msg.trim(),
+      replyTo: replyTo || null
+    });
+  });
 
-if(socket.gender==="male" && socket.preference==="female")
-queue.male_female.push(socket.id);
+  socket.on("image", ({ img, replyTo }) => {
+    if (!socket.room) return;
+    if (!img) return;
+    if (img.length > 500000) return;
 
-else if(socket.gender==="female" && socket.preference==="male")
-queue.female_male.push(socket.id);
+    socket.to(socket.room).emit("image", {
+      img,
+      replyTo: replyTo || null
+    });
+  });
 
-else if(socket.gender==="male")
-queue.male_both.push(socket.id);
+  socket.on("typing", () => {
+    if (!socket.room) return;
+    socket.to(socket.room).emit("typing");
+  });
 
-else
-queue.female_both.push(socket.id);
+  socket.on("skip", () => {
+    const partner = socket.partner ? io.sockets.sockets.get(socket.partner) : null;
+    const oldRoom = socket.room;
 
-}
+    if (socket.room) socket.leave(socket.room);
+    if (partner && partner.room === oldRoom) partner.leave(oldRoom);
 
-/* -------- REMOVE FROM QUEUES -------- */
+    socket.room = null;
+    socket.partner = null;
 
-function removeFromQueues(socket){
+    if (partner) {
+      partner.room = null;
+      partner.partner = null;
+      partner.emit("system", "Stranger skipped");
+    }
 
-Object.keys(queue).forEach(q=>{
+    socket.emit("system", "Searching for new stranger...");
 
-queue[q] = queue[q].filter(id => id !== socket.id);
+    if (partner) {
+      setTimeout(() => rematchSocket(partner), 300);
+    }
 
+    setTimeout(() => rematchSocket(socket), 300);
+  });
+
+  socket.on("disconnect", () => {
+    removeFromWaiting(socket.id);
+
+    const partner = socket.partner ? io.sockets.sockets.get(socket.partner) : null;
+    const oldRoom = socket.room;
+
+    if (partner && partner.room === oldRoom) {
+      partner.leave(oldRoom);
+      partner.room = null;
+      partner.partner = null;
+      partner.emit("system", "Stranger disconnected");
+      setTimeout(() => rematchSocket(partner), 500);
+    }
+
+    socket.room = null;
+    socket.partner = null;
+
+    if (users.has(socket.userId)) {
+      const sockets = users.get(socket.userId);
+      sockets.delete(socket.id);
+
+      if (sockets.size === 0) {
+        users.delete(socket.userId);
+      }
+    }
+
+    emitOnlineCount();
+  });
 });
-
-}
-
-/* -------- SOCKET CONNECTION -------- */
-
-io.on("connection",(socket)=>{
-
-io.emit("online",io.engine.clientsCount);
-
-
-/* -------- START CHAT -------- */
-
-socket.on("start",({gender,preference})=>{
-
-socket.gender = gender;
-socket.preference = preference;
-
-matchUser(socket);
-
-});
-
-
-/* -------- MESSAGE -------- */
-
-socket.on("message",({msg})=>{
-
-if(!socket.room) return;
-
-if(!msg || msg.length>300) return;
-
-const now = Date.now();
-
-if(messageLimit.has(socket.id)){
-
-if(now - messageLimit.get(socket.id) < 500) return;
-
-}
-
-messageLimit.set(socket.id,now);
-
-socket.to(socket.room).emit("message",msg);
-
-});
-
-
-/* -------- IMAGE -------- */
-
-socket.on("image",({img})=>{
-
-if(!socket.room) return;
-
-if(!img) return;
-
-if(img.length>500000) return;
-
-socket.to(socket.room).emit("image",img);
-
-});
-
-
-/* -------- TYPING -------- */
-
-socket.on("typing",()=>{
-
-if(socket.room){
-socket.to(socket.room).emit("typing");
-}
-
-});
-
-
-/* -------- SKIP -------- */
-
-socket.on("skip",()=>{
-
-if(socket.room){
-
-socket.to(socket.room).emit("system","Stranger skipped");
-
-socket.leave(socket.room);
-
-}
-
-socket.room = null;
-
-removeFromQueues(socket);
-
-matchUser(socket);
-
-});
-
-
-/* -------- DISCONNECT -------- */
-
-socket.on("disconnect",()=>{
-
-if(socket.room){
-
-socket.to(socket.room).emit("system","Stranger disconnected");
-
-}
-
-removeFromQueues(socket);
-
-io.emit("online",io.engine.clientsCount);
-
-});
-
-});
-
-
-/* -------- START SERVER -------- */
 
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-    console.log("Anonix server running on port " + PORT);
+  console.log("Anonix server running on port " + PORT);
 });
