@@ -21,11 +21,6 @@ app.use(express.static("public"));
 
 const waiting = [];
 const messageLimit = new Map();
-
-/*
-  users Map structure:
-  userId => Set of socket ids
-*/
 const users = new Map();
 const MAX_TABS_PER_USER = 3;
 
@@ -54,7 +49,6 @@ function matchUser(socket) {
   const partnerIndex = waiting.findIndex((user) => {
     if (!user.connected) return false;
     if (user.id === socket.id) return false;
-    if (user.userId === socket.userId) return false;
     return compatible(socket, user);
   });
 
@@ -128,9 +122,11 @@ io.on("connection", (socket) => {
   if (users.get(userId).size > MAX_TABS_PER_USER) {
     socket.emit("tabLimitExceeded", `Maximum ${MAX_TABS_PER_USER} tabs allowed`);
     users.get(userId).delete(socket.id);
+
     if (users.get(userId).size === 0) {
       users.delete(userId);
     }
+
     socket.disconnect(true);
     emitOnlineCount();
     return;
@@ -161,14 +157,16 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("image", ({ img, replyTo }) => {
+  socket.on("image", ({ img, replyTo, imageId, expiresIn }) => {
     if (!socket.room) return;
     if (!img) return;
     if (img.length > 500000) return;
 
     socket.to(socket.room).emit("image", {
       img,
-      replyTo: replyTo || null
+      replyTo: replyTo || null,
+      imageId: imageId || null,
+      expiresIn: expiresIn || 10000
     });
   });
 

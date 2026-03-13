@@ -59,7 +59,12 @@ socket.on("message", (data) => {
 });
 
 socket.on("image", (data) => {
-  addStrangerImage(data.img, data.replyTo || null);
+  addStrangerImage(
+    data.img,
+    data.replyTo || null,
+    data.imageId || null,
+    data.expiresIn || 10000
+  );
 });
 
 socket.on("typing", () => {
@@ -95,13 +100,17 @@ function sendImage() {
 
   reader.onload = function (e) {
     const img = e.target.result;
+    const imageId = "img_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+    const expiresIn = 10000;
 
     socket.emit("image", {
       img: img,
-      replyTo: replyTo
+      replyTo: replyTo,
+      imageId: imageId,
+      expiresIn: expiresIn
     });
 
-    addMyImage(img, replyTo);
+    addMyImage(img, replyTo, imageId, expiresIn);
     cancelReply();
     imgInput.value = "";
   };
@@ -132,6 +141,12 @@ msgInput.addEventListener("keypress", (e) => {
   }
 });
 
+msgInput.addEventListener("focus", () => {
+  setTimeout(() => {
+    scrollDown();
+  }, 300);
+});
+
 function setReply(messageText) {
   replyTo = messageText;
   replyBox.style.display = "flex";
@@ -160,6 +175,34 @@ function getTime() {
 function makeReplyHtml(reply) {
   if (!reply) return "";
   return `<div class="reply-preview">${escapeHtml(reply)}</div>`;
+}
+
+function startImageDestruct(container, expiresIn) {
+  const timerEl = container.querySelector(".image-timer");
+  const imgEl = container.querySelector("img");
+  let remaining = Math.floor(expiresIn / 1000);
+
+  const interval = setInterval(() => {
+    remaining--;
+
+    if (timerEl && remaining >= 0) {
+      timerEl.innerText = `Disappears in ${remaining}s`;
+    }
+
+    if (remaining <= 0) {
+      clearInterval(interval);
+
+      if (imgEl) {
+        imgEl.remove();
+      }
+
+      if (timerEl) {
+        timerEl.innerText = "Image expired";
+      }
+
+      container.classList.add("expired-image");
+    }
+  }, 1000);
 }
 
 function addMe(text, reply = null) {
@@ -197,34 +240,42 @@ function addSystem(text) {
   scrollDown();
 }
 
-function addMyImage(src, reply = null) {
+function addMyImage(src, reply = null, imageId = null, expiresIn = 10000) {
   const div = document.createElement("div");
   div.className = "me";
+  if (imageId) div.dataset.imageId = imageId;
 
   const replyHtml = makeReplyHtml(reply);
-  const img = `<img src="${src}" alt="image">`;
+  const img = `<img src="${src}" alt="image" class="protected-image" draggable="false">`;
+  const timer = `<div class="image-timer">Disappears in ${Math.floor(expiresIn / 1000)}s</div>`;
   const time = `<div class='timestamp'>${getTime()}</div>`;
 
-  div.innerHTML = replyHtml + img + time;
+  div.innerHTML = replyHtml + img + timer + time;
   div.onclick = () => setReply("📷 Image");
 
   messages.appendChild(div);
   scrollDown();
+
+  startImageDestruct(div, expiresIn);
 }
 
-function addStrangerImage(src, reply = null) {
+function addStrangerImage(src, reply = null, imageId = null, expiresIn = 10000) {
   const div = document.createElement("div");
   div.className = "stranger";
+  if (imageId) div.dataset.imageId = imageId;
 
   const replyHtml = makeReplyHtml(reply);
-  const img = `<img src="${src}" alt="image">`;
+  const img = `<img src="${src}" alt="image" class="protected-image" draggable="false">`;
+  const timer = `<div class="image-timer">Disappears in ${Math.floor(expiresIn / 1000)}s</div>`;
   const time = `<div class='timestamp'>${getTime()}</div>`;
 
-  div.innerHTML = replyHtml + img + time;
+  div.innerHTML = replyHtml + img + timer + time;
   div.onclick = () => setReply("📷 Image");
 
   messages.appendChild(div);
   scrollDown();
+
+  startImageDestruct(div, expiresIn);
 }
 
 function escapeHtml(text) {
@@ -232,3 +283,15 @@ function escapeHtml(text) {
   div.innerText = text;
   return div.innerHTML;
 }
+
+document.addEventListener("contextmenu", (e) => {
+  if (e.target.classList.contains("protected-image")) {
+    e.preventDefault();
+  }
+});
+
+document.addEventListener("dragstart", (e) => {
+  if (e.target.classList.contains("protected-image")) {
+    e.preventDefault();
+  }
+});
