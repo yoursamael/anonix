@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
 
   <title>Start Anonymous Chat | Anonyx</title>
   <meta
@@ -24,13 +26,14 @@
   <link rel="canonical" href="https://anonyx.online/chat" />
   <link rel="icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/style.css" />
-  <link rel="stylesheet" href="anonyx.css" />
+  <link rel="stylesheet" href="/anonyx.css" />
 </head>
 <body>
   <div class="chat-page">
     <header class="chat-header">
       <div class="chat-header-inner">
         <a href="/" class="chat-logo">Anonyx</a>
+
         <div class="chat-status">
           <span class="status-dot"></span>
           <span id="online">Users Online: 0</span>
@@ -69,7 +72,9 @@
         </div>
 
         <div class="setup-actions">
-          <button onclick="startChat()" class="btn btn-primary">Start Chat</button>
+          <button onclick="startChat()" type="button" class="btn btn-primary">
+            Start Chat
+          </button>
           <a href="/" class="btn btn-secondary">Back Home</a>
         </div>
       </section>
@@ -80,7 +85,10 @@
             <h2>Anonymous Chat Room</h2>
             <p>Be respectful. Do not share personal information.</p>
           </div>
-          <button onclick="skip()" class="btn btn-secondary">Skip Stranger</button>
+
+          <button onclick="skip()" type="button" class="btn btn-secondary">
+            Skip Stranger
+          </button>
         </div>
 
         <div id="messages" class="messages-box"></div>
@@ -89,14 +97,37 @@
 
         <div id="replyBox" class="reply-box">
           <div id="replyText"></div>
-          <button id="cancelReplyBtn" onclick="cancelReply()" type="button">✕</button>
+          <button
+            id="cancelReplyBtn"
+            onclick="cancelReply()"
+            type="button"
+            aria-label="Cancel reply"
+          >
+            ✕
+          </button>
         </div>
 
         <div class="input-bar">
-          <input id="msg" type="text" placeholder="Type your message..." autocomplete="off" />
+          <input
+            id="msg"
+            type="text"
+            placeholder="Type your message..."
+            autocomplete="off"
+          />
+
           <input type="file" id="imgInput" accept="image/*" />
-          <button onclick="sendImage()" type="button" class="btn btn-secondary">Image</button>
-          <button onclick="sendMsg()" type="button" class="btn btn-primary">Send</button>
+
+          <button
+            onclick="document.getElementById('imgInput').click()"
+            type="button"
+            class="btn btn-secondary image-upload-btn"
+          >
+            Image
+          </button>
+
+          <button onclick="sendMsg()" type="button" class="btn btn-primary">
+            Send
+          </button>
         </div>
       </section>
     </main>

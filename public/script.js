@@ -1,8 +1,8 @@
-let userId = localStorage.getItem("anonix_user");
+let userId = localStorage.getItem("anonyx_user");
 
 if (!userId) {
   userId = crypto.randomUUID();
-  localStorage.setItem("anonix_user", userId);
+  localStorage.setItem("anonyx_user", userId);
 }
 
 const socket = io({
@@ -22,22 +22,28 @@ const replyBox = document.getElementById("replyBox");
 const replyText = document.getElementById("replyText");
 const msgInput = document.getElementById("msg");
 const imgInput = document.getElementById("imgInput");
+const onlineEl = document.getElementById("online");
+const setupSection = document.getElementById("setup");
+const chatSection = document.getElementById("chat");
 
 function startChat() {
   myGender = document.getElementById("gender").value;
   myPreference = document.getElementById("preference").value;
 
-  socket.emit("start", { gender: myGender, preference: myPreference });
+  socket.emit("start", {
+    gender: myGender,
+    preference: myPreference
+  });
 
-  document.getElementById("setup").style.display = "none";
-  document.getElementById("chat").style.display = "flex";
+  setupSection.style.display = "none";
+  chatSection.style.display = "flex";
 
   messages.innerHTML = "";
   addSystem("🔎 Looking for stranger...");
 }
 
 socket.on("online", (count) => {
-  document.getElementById("online").innerText = "Users Online: " + count;
+  onlineEl.innerText = "Users Online: " + count;
 });
 
 socket.on("tabLimitExceeded", (msg) => {
@@ -100,7 +106,8 @@ function sendImage() {
 
   reader.onload = function (e) {
     const img = e.target.result;
-    const imageId = "img_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+    const imageId =
+      "img_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
     const expiresIn = 10000;
 
     socket.emit("image", {
@@ -135,8 +142,9 @@ msgInput.addEventListener("input", () => {
   }
 });
 
-msgInput.addEventListener("keypress", (e) => {
+msgInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
+    e.preventDefault();
     sendMsg();
   }
 });
@@ -147,16 +155,23 @@ msgInput.addEventListener("focus", () => {
   }, 300);
 });
 
+/* Auto-send image after selection */
+imgInput.addEventListener("change", () => {
+  if (imgInput.files && imgInput.files[0]) {
+    sendImage();
+  }
+});
+
 function setReply(messageText) {
   replyTo = messageText;
-  replyBox.style.display = "flex";
+  replyBox.classList.add("active");
   replyText.innerText = "Replying to: " + messageText;
   msgInput.focus();
 }
 
 function cancelReply() {
   replyTo = null;
-  replyBox.style.display = "none";
+  replyBox.classList.remove("active");
   replyText.innerText = "";
 }
 
@@ -205,35 +220,40 @@ function startImageDestruct(container, expiresIn) {
   }, 1000);
 }
 
-function addMe(text, reply = null) {
+function createMessageElement(className, html, replyTargetText) {
   const div = document.createElement("div");
-  div.className = "me";
-  div.innerHTML =
-    makeReplyHtml(reply) +
-    `${escapeHtml(text)}<div class='timestamp'>${getTime()}</div>`;
+  div.className = className;
+  div.innerHTML = html;
 
-  div.onclick = () => setReply(text);
+  if (replyTargetText) {
+    div.onclick = () => setReply(replyTargetText);
+  }
 
   messages.appendChild(div);
   scrollDown();
 }
 
-function addStranger(text, reply = null) {
-  const div = document.createElement("div");
-  div.className = "stranger";
-  div.innerHTML =
+function addMe(text, reply = null) {
+  const html =
     makeReplyHtml(reply) +
-    `${escapeHtml(text)}<div class='timestamp'>${getTime()}</div>`;
+    `<div class="message-text">${escapeHtml(text)}</div>` +
+    `<div class="timestamp">${getTime()}</div>`;
 
-  div.onclick = () => setReply(text);
+  createMessageElement("message me", html, text);
+}
 
-  messages.appendChild(div);
-  scrollDown();
+function addStranger(text, reply = null) {
+  const html =
+    makeReplyHtml(reply) +
+    `<div class="message-text">${escapeHtml(text)}</div>` +
+    `<div class="timestamp">${getTime()}</div>`;
+
+  createMessageElement("message stranger", html, text);
 }
 
 function addSystem(text) {
   const div = document.createElement("div");
-  div.className = "system";
+  div.className = "message system";
   div.innerText = text;
 
   messages.appendChild(div);
@@ -242,15 +262,18 @@ function addSystem(text) {
 
 function addMyImage(src, reply = null, imageId = null, expiresIn = 10000) {
   const div = document.createElement("div");
-  div.className = "me";
-  if (imageId) div.dataset.imageId = imageId;
+  div.className = "message me";
 
-  const replyHtml = makeReplyHtml(reply);
-  const img = `<img src="${src}" alt="image" class="protected-image" draggable="false">`;
-  const timer = `<div class="image-timer">Disappears in ${Math.floor(expiresIn / 1000)}s</div>`;
-  const time = `<div class='timestamp'>${getTime()}</div>`;
+  if (imageId) {
+    div.dataset.imageId = imageId;
+  }
 
-  div.innerHTML = replyHtml + img + timer + time;
+  div.innerHTML =
+    makeReplyHtml(reply) +
+    `<img src="${src}" alt="image" class="protected-image" draggable="false">` +
+    `<div class="image-timer">Disappears in ${Math.floor(expiresIn / 1000)}s</div>` +
+    `<div class="timestamp">${getTime()}</div>`;
+
   div.onclick = () => setReply("📷 Image");
 
   messages.appendChild(div);
@@ -261,15 +284,18 @@ function addMyImage(src, reply = null, imageId = null, expiresIn = 10000) {
 
 function addStrangerImage(src, reply = null, imageId = null, expiresIn = 10000) {
   const div = document.createElement("div");
-  div.className = "stranger";
-  if (imageId) div.dataset.imageId = imageId;
+  div.className = "message stranger";
 
-  const replyHtml = makeReplyHtml(reply);
-  const img = `<img src="${src}" alt="image" class="protected-image" draggable="false">`;
-  const timer = `<div class="image-timer">Disappears in ${Math.floor(expiresIn / 1000)}s</div>`;
-  const time = `<div class='timestamp'>${getTime()}</div>`;
+  if (imageId) {
+    div.dataset.imageId = imageId;
+  }
 
-  div.innerHTML = replyHtml + img + timer + time;
+  div.innerHTML =
+    makeReplyHtml(reply) +
+    `<img src="${src}" alt="image" class="protected-image" draggable="false">` +
+    `<div class="image-timer">Disappears in ${Math.floor(expiresIn / 1000)}s</div>` +
+    `<div class="timestamp">${getTime()}</div>`;
+
   div.onclick = () => setReply("📷 Image");
 
   messages.appendChild(div);
