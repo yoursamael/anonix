@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anonyx - Free Anonymous Chat With Strangers Online</title>
+  <meta name="description"
+    content="Anonyx is a free anonymous chat platform where you can talk to strangers instantly. No signup required. Start random anonymous chat online now.">
+  <meta name="robots" content="index, follow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta property="og:title" content="Anonyx - Free Anonymous Chat With Strangers Online">
+  <meta property="og:description" content="Talk to strangers instantly with free anonymous chat. No signup required.">
+  <meta property="og:url" content="https://anonyx.online">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://anonyx.online/og-image.jpg">
+
+  <link rel="canonical" href="https://anonyx.online/">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="anonyx.css">
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <h2>Anonix</h2>
+      <div id="online">Users Online: 0</div>
+    </header>
+
+    <div id="setup" class="setup">
+      <label>Your Gender</label>
+      <select id="gender">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+
+      <label>Interested In</label>
+      <select id="preference">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="both">Both</option>
+      </select>
+
+      <button onclick="startChat()">Start Chat</button>
+    </div>
+
+    <div id="chat" class="chat" style="display:none;">
+      <div id="messages"></div>
+
+      <div id="typing"></div>
+
+      <div id="replyBox">
+        <div id="replyText"></div>
+        <button id="cancelReplyBtn" onclick="cancelReply()">✕</button>
+      </div>
+
+      <div class="input-bar">
+        <input id="msg" placeholder="Type message">
+        <input type="file" id="imgInput" accept="image/*">
+        <button onclick="sendImage()">Image</button>
+        <button onclick="sendMsg()">Send</button>
+        <button onclick="skip()" class="next">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
