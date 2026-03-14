@@ -2,14 +2,32 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const helmet = require("helmet");
+const path = require("path");
 
 const app = express();
 
+/*
+  Security headers
+*/
 app.use(
   helmet({
     contentSecurityPolicy: false
   })
 );
+
+/*
+  Force main domain version (optional but good for SEO)
+  Redirect www.anonyx.online -> anonyx.online
+*/
+app.use((req, res, next) => {
+  const host = req.headers.host || "";
+
+  if (host === "www.anonyx.online") {
+    return res.redirect(301, `https://anonyx.online${req.originalUrl}`);
+  }
+
+  next();
+});
 
 const server = http.createServer(app);
 
@@ -17,8 +35,54 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e6
 });
 
-app.use(express.static("public"));
+/*
+  Serve static files from /public
+*/
+app.use(express.static(path.join(__dirname, "public")));
 
+/*
+  SEO / Site routes
+  These let you use clean URLs instead of .html URLs
+*/
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.get("/chat", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "chat.html"));
+});
+
+app.get("/privacy-policy", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "privacy-policy.html"));
+});
+
+app.get("/terms", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "terms.html"));
+});
+
+/*
+  Future SEO pages
+  Add these only when you create the files
+*/
+// app.get("/anonymous-chat", (req, res) => {
+//   res.sendFile(path.join(__dirname, "public", "anonymous-chat.html"));
+// });
+
+// app.get("/chat-with-strangers", (req, res) => {
+//   res.sendFile(path.join(__dirname, "public", "chat-with-strangers.html"));
+// });
+
+// app.get("/random-chat-online", (req, res) => {
+//   res.sendFile(path.join(__dirname, "public", "random-chat-online.html"));
+// });
+
+// app.get("/omegle-alternative", (req, res) => {
+//   res.sendFile(path.join(__dirname, "public", "omegle-alternative.html"));
+// });
+
+/*
+  Chat matching logic
+*/
 const waiting = [];
 const messageLimit = new Map();
 const users = new Map();
@@ -226,12 +290,20 @@ io.on("connection", (socket) => {
       }
     }
 
+    messageLimit.delete(socket.id);
     emitOnlineCount();
   });
+});
+
+/*
+  404 fallback
+*/
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "public", "404.html"));
 });
 
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-  console.log("Anonix server running on port " + PORT);
+  console.log("Anonyx server running on port " + PORT);
 });
