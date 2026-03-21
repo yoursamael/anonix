@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Start Anonymous Chat | Anonyx</title>
+  <meta name="description" content="Start anonymous chat on Anonyx with smart matching, cleaner UI, and safer chat tools." />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:title" content="Start Anonymous Chat | Anonyx" />
+  <meta property="og:description" content="Talk to strangers instantly with safer anonymous chat on Anonyx." />
+  <meta property="og:url" content="https://anonyx.online/chat" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://anonyx.online/og-image.jpg" />
+  <link rel="canonical" href="https://anonyx.online/chat" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/anonyx.css" />
+</head>
+<body>
+  <div class="chat-page">
+    <header class="chat-header">
+      <div class="chat-header-inner">
+        <a href="/" class="chat-logo">Anonyx</a>
+        <div class="chat-meta-bar">
+          <div class="chat-status"><span class="status-dot"></span><span id="online">Users Online: 0</span></div>
+          <div class="pill" id="matchQuality">Ready</div>
+          <button id="themeToggle" type="button" class="icon-btn" aria-label="Toggle compact mode">◐</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="chat-main">
+      <section id="setup" class="setup-card">
+        <div class="setup-top">
+          <span class="setup-badge">Anonymous • Random • Instant</span>
+          <h1>Start Anonymous Chat</h1>
+          <p>Choose your preferences and connect with a stranger instantly. Safer, cleaner, and faster.</p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="gender">Your Gender</label>
+            <select id="gender">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="preference">Interested In</label>
+            <select id="preference">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="language">Language</label>
+            <select id="language">
+              <option value="English">English</option>
+              <option value="Hindi">Hindi</option>
+              <option value="Both">Both</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="interests">Interests (comma separated)</label>
+            <input id="interests" type="text" maxlength="60" placeholder="gaming, music, coding" />
+          </div>
+        </div>
+
+        <div class="setup-actions">
+          <button id="startBtn" type="button" class="btn btn-primary">Start Chat</button>
+          <a href="/" class="btn btn-secondary">Back Home</a>
+        </div>
+      </section>
+
+      <section id="chat" class="chat-card hidden">
+        <div class="chat-topbar">
+          <div>
+            <h2>Anonymous Chat Room</h2>
+            <p id="chatHint">Be respectful. Never share personal information.</p>
+          </div>
+          <div class="topbar-actions">
+            <div class="pill" id="chatTimer">00:00</div>
+            <button id="muteBtn" type="button" class="btn btn-secondary">Mute</button>
+            <button id="reportBtn" type="button" class="btn btn-danger">Report</button>
+            <button id="skipBtn" type="button" class="btn btn-secondary">Skip Stranger</button>
+          </div>
+        </div>
+
+        <div id="searchState" class="search-state">Looking for someone compatible...</div>
+        <div id="messages" class="messages-box"></div>
+        <div id="typing" class="typing-box"></div>
+
+        <div id="replyBox" class="reply-box">
+          <div id="replyText"></div>
+          <button id="cancelReplyBtn" type="button" aria-label="Cancel reply">✕</button>
+        </div>
+
+        <div id="imagePreview" class="image-preview hidden">
+          <img id="imagePreviewTag" alt="Selected preview" />
+          <div class="image-preview-actions">
+            <span id="imagePreviewName"></span>
+            <button id="cancelImageBtn" type="button" class="btn btn-secondary">Remove</button>
+          </div>
+        </div>
+
+        <div class="input-bar">
+          <input id="msg" type="text" maxlength="300" placeholder="Type your message..." autocomplete="off" />
+          <input type="file" id="imgInput" accept="image/png,image/jpeg,image/webp,image/gif" />
+          <button id="imgBtn" type="button" class="btn btn-secondary image-upload-btn">Image</button>
+          <button id="sendBtn" type="button" class="btn btn-primary">Send</button>
+        </div>
+        <div class="chat-footer-note">Press Enter to send. Images disappear after a few seconds.</div>
+      </section>
+    </main>
+  </div>
+
+  <div id="matchPopup" class="match-popup">
+  <div class="match-popup-inner">
+    <span class="match-popup-icon">💞</span>
+    <span class="match-popup-text">Matched with someone!</span>
+  </div>
+</div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/script.js"></script>
+</body>
+</html>

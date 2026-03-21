@@ -1,0 +1,19 @@
+{
+  "name": "anonyx",
+  "version": "1.1.0",
+  "description": "Anonymous chat app with safer matching and analytics",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.3.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.1.0",
+    "socket.io": "^4.8.1"
+  }
+}

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+  <style>
+    body {
+      background: #0b1124;
+      color: #fff;
+      font-family: Arial;
+      padding: 20px;
+    }
+
+    h1 { margin-bottom: 10px; }
+
+    .card {
+      background: #111936;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .ban { background: red; color: white; }
+    .kick { background: orange; color: black; }
+  </style>
+</head>
+<body>
+
+<h1>🔥 Admin Panel</h1>
+
+<div class="card" id="stats"></div>
+
+<div class="card">
+  <h2>👥 Users</h2>
+  <ul id="users"></ul>
+</div>
+
+<div class="card">
+  <h2>⚠️ Reports</h2>
+  <ul id="reports"></ul>
+</div>
+
+<div class="card">
+  <h2>🚫 Banned Users</h2>
+  <ul id="banned"></ul>
+</div>
+
+<div id="adminName"></div>
+<button onclick="logoutAdmin()">Logout</button>
+
+<script>
+async function loadStats() {
+  const res = await fetch("/api/stats");
+  const data = await res.json();
+
+  document.getElementById("stats").innerHTML = `
+    👥 Users: ${data.activeUsers} <br>
+    🔥 Matches: ${data.matches} <br>
+    ❌ Skip Rate: ${data.skipRate}% <br>
+    ⚠️ Reports: ${data.reports}
+  `;
+}
+
+async function loadAdminMe() {
+  const res = await fetch("/admin/me");
+  if (res.status === 401) {
+    window.location.href = "/admin/login";
+    return;
+  }
+  const data = await res.json();
+  const adminName = document.getElementById("adminName");
+  if (adminName) {
+    adminName.innerText = `Logged in as: ${data.admin.username}`;
+  }
+}
+
+async function loadUsers() {
+  const res = await fetch("/admin/users");
+  if (res.status === 401) {
+    window.location.href = "/admin/login";
+    return;
+  }
+  const users = await res.json();
+
+  const list = document.getElementById("users");
+  list.innerHTML = "";
+
+  users.forEach((user) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${user}
+      <button class="ban" data-user="${user}">Ban</button>
+      <button class="kick" data-user="${user}">Kick</button>
+    `;
+    list.appendChild(li);
+  });
+
+  document.querySelectorAll(".ban").forEach((btn) => {
+    btn.onclick = async () => {
+      const userId = btn.dataset.user;
+      const res = await fetch("/admin/ban", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ userId })
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadUsers();
+      loadBanned();
+      loadStats();
+    };
+  });
+
+  document.querySelectorAll(".kick").forEach((btn) => {
+    btn.onclick = async () => {
+      const userId = btn.dataset.user;
+      const res = await fetch("/admin/kick", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ userId })
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadUsers();
+      loadStats();
+    };
+  });
+}
+
+async function loadReports() {
+  const res = await fetch("/admin/reports");
+  if (res.status === 401) {
+    window.location.href = "/admin/login";
+    return;
+  }
+  const data = await res.json();
+
+  const list = document.getElementById("reports");
+  list.innerHTML = "";
+
+  data.forEach((r) => {
+    const li = document.createElement("li");
+    li.innerText = `${r.reason} | ${r.at}`;
+    list.appendChild(li);
+  });
+}
+
+async function loadBanned() {
+  const res = await fetch("/admin/banned");
+  if (res.status === 401) {
+    window.location.href = "/admin/login";
+    return;
+  }
+  const users = await res.json();
+
+  const list = document.getElementById("banned");
+  list.innerHTML = "";
+
+  users.forEach((user) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${user}
+      <button class="unban" data-user="${user}">Unban</button>
+    `;
+    list.appendChild(li);
+  });
+
+  document.querySelectorAll(".unban").forEach((btn) => {
+    btn.onclick = async () => {
+      const userId = btn.dataset.user;
+      const res = await fetch("/admin/unban", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ userId })
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadBanned();
+      loadUsers();
+      loadStats();
+    };
+  });
+}
+
+async function logoutAdmin() {
+  await fetch("/admin/logout", {
+    method: "POST"
+  });
+  window.location.href = "/admin/login";
+}
+
+loadAdminMe();
+loadStats();
+loadUsers();
+loadReports();
+loadBanned();
+
+setInterval(() => {
+  loadStats();
+  loadUsers();
+  loadReports();
+  loadBanned();
+}, 2000);
+</script>
+
+</body>
+</html>

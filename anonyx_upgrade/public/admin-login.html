@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #0b1124;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    .card {
+      width: min(420px, 92%);
+      background: #121a35;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.35);
+    }
+    h1 { margin-top: 0; }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #2c3b72;
+      background: #0f1730;
+      color: #fff;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #7c5cff;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #msg {
+      margin-top: 12px;
+      color: #ff8b8b;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Admin Login</h1>
+    <input id="username" type="text" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
+    <button id="loginBtn">Login</button>
+    <div id="msg"></div>
+  </div>
+
+  <script>
+    document.getElementById("loginBtn").onclick = async () => {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const msg = document.getElementById("msg");
+
+      msg.innerText = "";
+
+      const res = await fetch("/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        msg.innerText = data.message || "Login failed";
+        return;
+      }
+
+      window.location.href = "/admin";
+    };
+  </script>
+</body>
+</html>
