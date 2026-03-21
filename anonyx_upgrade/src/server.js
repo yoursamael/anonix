@@ -371,7 +371,7 @@ function matchUser(socket) {
 
   socket.emit("matched", { room, partnerLabel: "Stranger" });
   partner.emit("matched", { room, partnerLabel: "Stranger" });
-  io.to(room).emit("system", "💞 You are now connected. Stay respectful.");
+  io.to(room).emit("system", " Say hi ..💞");
 }
 
 function closeRoom(socket, systemMessageForPartner) {

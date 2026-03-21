@@ -128,7 +128,7 @@ socket.on("matched", () => {
   searchState.classList.add("hidden");
   matchQuality.innerText = "Matched";
   chatHint.innerText = "Connected. Be respectful and use report if needed.";
-  addSystem("✅ Connected to someone special...");
+  addSystem("💞 You are now connected with someone special.💞");
 
   // 🔥 MATCH POPUP
   const popup = document.getElementById("matchPopup");
