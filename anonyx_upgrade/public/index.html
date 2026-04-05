@@ -18,8 +18,9 @@
   <meta name="twitter:description" content="Safer anonymous chat with no signup, smart matching, and clean UI." />
   <meta name="twitter:image" content="https://anonyx.online/og-image.jpg" />
   <meta name="theme-color" content="#070b16" />
-  <link rel="icon" href="/favicon.ico" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/mobile-rtl.css" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -38,12 +39,16 @@
 <body>
   <header class="site-header">
     <div class="container nav">
-      <a href="/" class="logo">Anonyx</a>
-      <nav class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#how-it-works">How It Works</a>
-        <a href="#faq">FAQ</a>
-        <a href="/chat" class="nav-cta">Start Chat</a>
+      <a href="/" class="logo" aria-label="Anonyx home">Anonyx</a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#features" data-i18n="nav.features">Features</a>
+        <a href="#how-it-works" data-i18n="nav.how_it_works">How It Works</a>
+        <a href="#faq" data-i18n="nav.faq">FAQ</a>
+        <a href="/chat" class="nav-cta" aria-label="Go to chat page" data-i18n="nav.start_chat">Start Chat</a>
+        <div class="lang-selector-wrapper">
+          <button class="lang-selector-btn" aria-label="Select language" title="Language">🌐</button>
+          <div data-component="language-selector"></div>
+        </div>
       </nav>
     </div>
   </header>
@@ -52,22 +57,22 @@
     <section class="hero">
       <div class="container hero-grid">
         <div class="hero-content">
-          <span class="badge">Safer • Faster • No Signup</span>
-          <h1>Anonymous Chat That Feels Clean, Fast, and Private</h1>
-          <p class="hero-text">
+          <span class="badge" data-i18n="hero.badge">Safer • Faster • No Signup</span>
+          <h1 data-i18n="hero.title">Anonymous Chat That Feels Clean, Fast, and Private</h1>
+          <p class="hero-text" data-i18n="hero.description">
             Start random anonymous chat in seconds. Meet strangers, filter by preference,
             add interests, choose language, skip safely, and leave anytime.
           </p>
 
           <div class="hero-buttons">
-            <a href="/chat" class="btn btn-primary">Start Chat</a>
-            <a href="#how-it-works" class="btn btn-secondary">How It Works</a>
+            <a href="/chat" class="btn btn-primary" data-i18n="hero.start_chat" aria-label="Start anonymously chatting with strangers">Start Chat</a>
+            <a href="#how-it-works" class="btn btn-secondary" data-i18n="hero.how_it_works" aria-label="Learn how Anonyx anonymous chat works">How It Works</a>
           </div>
 
           <div class="hero-points">
-            <span>✓ No signup required</span>
-            <span>✓ Smart rematch protection</span>
-            <span>✓ Report and block tools</span>
+            <span data-i18n="hero.no_signup" aria-label="No account or signup required">✓ No signup required</span>
+            <span data-i18n="hero.smart_matching" aria-label="Smart rematch protection to avoid chatting with same person">✓ Smart rematch protection</span>
+            <span data-i18n="hero.report_tools" aria-label="Report and block tools to keep chat safe">✓ Report and block tools</span>
           </div>
         </div>
 
@@ -94,23 +99,23 @@
 
     <section class="features" id="features">
       <div class="container">
-        <h2>Why Use Anonyx?</h2>
-        <p class="section-intro">
+        <h2 data-i18n="features.title">Why Use Anonyx?</h2>
+        <p class="section-intro" data-i18n="features.subtitle">
           Built for people who want anonymous conversations without the usual chaos,
           fake friction, or bloated signup flow.
         </p>
         <div class="card-grid">
           <article class="card">
-            <h3>Smarter Matching</h3>
-            <p>Gender preference, language choice, interests, and skip-memory protection for better matches.</p>
+            <h3 data-i18n="features.smarter_matching">Smarter Matching</h3>
+            <p data-i18n="features.smarter_matching_desc">Gender preference, language choice, interests, and skip-memory protection for better matches.</p>
           </article>
           <article class="card">
-            <h3>Safer Chat</h3>
-            <p>Quick report tools, safer UX, image limits, and basic anti-spam controls reduce abuse.</p>
+            <h3 data-i18n="features.safer_chat">Safer Chat</h3>
+            <p data-i18n="features.safer_chat_desc">Quick report tools, safer UX, image limits, and basic anti-spam controls reduce abuse.</p>
           </article>
           <article class="card">
-            <h3>Fast and Minimal</h3>
-            <p>Open the site, hit start, and chat immediately without creating an account.</p>
+            <h3 data-i18n="features.fast_minimal">Fast and Minimal</h3>
+            <p data-i18n="features.fast_minimal_desc">Open the site, hit start, and chat immediately without creating an account.</p>
           </article>
         </div>
       </div>
@@ -118,23 +123,23 @@
 
     <section class="how-it-works" id="how-it-works">
       <div class="container">
-        <h2>How It Works</h2>
-        <p class="section-intro">No account drama. No long setup. Just enter, match, and talk.</p>
+        <h2 data-i18n="how_it_works.title">How It Works</h2>
+        <p class="section-intro" data-i18n="how_it_works.subtitle">No account drama. No long setup. Just enter, match, and talk.</p>
         <div class="card-grid steps-grid">
           <article class="card step-card">
             <div class="step-number">1</div>
-            <h3>Set Preferences</h3>
-            <p>Choose gender preference, language, and add a few interests.</p>
+            <h3 data-i18n="how_it_works.set_preferences">Set Preferences</h3>
+            <p data-i18n="how_it_works.set_preferences_desc">Choose gender preference, language, and add a few interests.</p>
           </article>
           <article class="card step-card">
             <div class="step-number">2</div>
-            <h3>Get Matched</h3>
-            <p>Connect instantly with a compatible stranger without signup.</p>
+            <h3 data-i18n="how_it_works.get_matched">Get Matched</h3>
+            <p data-i18n="how_it_works.get_matched_desc">Connect instantly with a compatible stranger without signup.</p>
           </article>
           <article class="card step-card">
             <div class="step-number">3</div>
-            <h3>Skip or Report Fast</h3>
-            <p>Leave bad chats quickly and avoid being rematched with the same skipped user immediately.</p>
+            <h3 data-i18n="how_it_works.skip_or_report">Skip or Report Fast</h3>
+            <p data-i18n="how_it_works.skip_or_report_desc">Leave bad chats quickly and avoid being rematched with the same skipped user immediately.</p>
           </article>
         </div>
       </div>
@@ -157,8 +162,8 @@
 
     <section class="safety">
       <div class="narrow">
-        <h2>Chat Safely</h2>
-        <p>
+        <h2 data-i18n="safety.title">Chat Safely</h2>
+        <p data-i18n="safety.warning">
           Never share passwords, bank details, home address, personal IDs, or anything you would regret leaking.
           If someone is abusive, suspicious, or creepy, skip and report immediately.
         </p>
@@ -167,19 +172,19 @@
 
     <section class="faq" id="faq">
       <div class="container">
-        <h2>FAQ</h2>
+        <h2 data-i18n="faq.title">FAQ</h2>
         <div class="faq-grid">
           <article class="card">
-            <h3>Do I need an account?</h3>
-            <p>No. You can start chatting instantly without signup.</p>
+            <h3 data-i18n="faq.q1">Do I need an account?</h3>
+            <p data-i18n="faq.a1">No. You can start chatting instantly without signup.</p>
           </article>
           <article class="card">
-            <h3>Can I skip strangers?</h3>
-            <p>Yes. The app also avoids immediate rematching with the same skipped user.</p>
+            <h3 data-i18n="faq.q2">Can I skip strangers?</h3>
+            <p data-i18n="faq.a2">Yes. The app also avoids immediate rematching with the same skipped user.</p>
           </article>
           <article class="card">
-            <h3>Can I report abuse?</h3>
-            <p>Yes. Built-in report actions help flag harassment or spam quickly.</p>
+            <h3 data-i18n="faq.q3">Can I report abuse?</h3>
+            <p data-i18n="faq.a3">Yes. Built-in report actions help flag harassment or spam quickly.</p>
           </article>
         </div>
       </div>
@@ -187,9 +192,9 @@
 
     <section class="cta">
       <div class="narrow cta-card">
-        <h2>Ready to Start?</h2>
-        <p>Jump into a clean, private, random chat experience now.</p>
-        <a href="/chat" class="btn btn-primary">Start Anonymous Chat</a>
+        <h2 data-i18n="cta.title">Ready to Start?</h2>
+        <p data-i18n="cta.subtitle">Jump into a clean, private, random chat experience now.</p>
+        <a href="/chat" class="btn btn-primary" data-i18n="cta.button" aria-label="Start your anonymous chat immediately">Start Anonymous Chat</a>
       </div>
     </section>
   </main>
@@ -203,5 +208,26 @@
       </div>
     </div>
   </footer>
+
+  <script src="/js/experiments.js"></script>
+  <script src="/i18n/i18n.js"></script>
+  <script src="/mobile-enhancements.js"></script>
+  <script>
+    (function () {
+      var uid = localStorage.getItem("anonyx_user");
+      if (window.AnonyxExperiments) AnonyxExperiments.bootstrap(uid || "anon");
+      document.querySelectorAll('a[href="/chat"], a.nav-cta, .hero-buttons a.btn-primary').forEach(function (a) {
+        a.addEventListener("click", function () {
+          if (!window.AnonyxExperiments) return;
+          try {
+            var ab = document.documentElement.dataset.anonyxAb;
+            var v = ab ? JSON.parse(ab) : {};
+            if (v.hero_cta) AnonyxExperiments.trackConversion("hero_cta", v.hero_cta);
+          } catch (e) {}
+          AnonyxExperiments.beacon("cta_click");
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

@@ -1,0 +1,417 @@
+/**
+ * RTL Language Support and Mobile Bottom Sheet Enhancements
+ * Support for: Arabic, Farsi, Hebrew (RTL)
+ * Mobile optimization: Bottom sheet, swipe gestures, keyboard handling
+ */
+
+/* =======================
+   RTL LANGUAGE SUPPORT
+   ======================= */
+
+/* Arabic, Farsi, Hebrew - Right-to-Left */
+[dir="rtl"] body {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] input,
+[dir="rtl"] textarea {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Message alignment for RTL */
+[dir="rtl"] .message-group.me {
+  margin-left: 0;
+  margin-right: auto;
+  align-items: flex-end;
+}
+
+[dir="rtl"] .message-group.me .message {
+  background: var(--primary);
+  border-radius: 14px 0 14px 14px;
+  margin-left: 0;
+  margin-right: 8px;
+}
+
+[dir="rtl"] .message-group.stranger {
+  margin-right: 0;
+  margin-left: auto;
+  align-items: flex-start;
+}
+
+[dir="rtl"] .message-group.stranger .message {
+  border-radius: 0 14px 14px 14px;
+  margin-right: 0;
+  margin-left: 8px;
+}
+
+/* RTL button and nav alignment */
+[dir="rtl"] nav {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nav-links {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .form-group {
+  text-align: right;
+}
+
+[dir="rtl"] label {
+  display: block;
+  text-align: right;
+}
+
+[dir="rtl"] button,
+[dir="rtl"] .btn {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+[dir="rtl"] .button-group {
+  flex-direction: row-reverse;
+}
+
+/* RTL input icons/decorations */
+[dir="rtl"] input::placeholder {
+  text-align: right;
+}
+
+/* RTL links and text flow */
+[dir="rtl"] a {
+  direction: rtl;
+  display: inline-block;
+}
+
+[dir="rtl"] .card {
+  border-radius: 14px;
+}
+
+/* RTL typing indicator */
+[dir="rtl"] .typing-indicator {
+  justify-content: flex-end;
+}
+
+/* Language selector positioning for RTL */
+[dir="rtl"] .lang-selector {
+  float: left;
+}
+
+[dir="rtl"] nav.navbar {
+  flex-direction: row-reverse;
+}
+
+/* RTL feature cards - maintain order but flip text */
+[dir="rtl"] .feature-card {
+  text-align: right;
+}
+
+/* RTL footer */
+[dir="rtl"] footer {
+  text-align: right;
+}
+
+[dir="rtl"] .footer-content {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+/* =======================
+   MOBILE BOTTOM SHEET
+   ======================= */
+
+@media (max-width: 768px) {
+  /* Bottom sheet container - fixed at bottom for mobile */
+  .chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    flex-shrink: 0;
+    height: auto;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 16px;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+
+  /* Bottom sheet input area */
+  .chat-input-area {
+    flex-shrink: 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(20, 20, 40, 0.98);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 100;
+    animation: slideUpMobile 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Adjust chat messages for fixed input */
+  .chat-messages {
+    padding-bottom: 80px; /* Leave room for fixed input */
+  }
+
+  /* Hide mobile bottom sheet on keyboard open */
+  @supports (height: 100dvh) {
+    .chat-input-area {
+      bottom: 0;
+      height: auto;
+    }
+  }
+
+  /* Swipe gesture zones */
+  .swipe-zone-left {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 30px;
+    height: 100%;
+    z-index: 5;
+    touch-action: pan-y;
+  }
+
+  .swipe-zone-right {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 100%;
+    z-index: 5;
+    touch-action: pan-y;
+  }
+
+  /* Bottom sheet slide animation */
+  @keyframes slideUpMobile {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Keyboard appearance detection */
+  .keyboard-visible .chat-input-area {
+    position: absolute;
+    bottom: 0;
+  }
+
+  .keyboard-visible .chat-messages {
+    padding-bottom: 60px;
+  }
+
+  /* iOS virtual keyboard handling */
+  @supports (padding: max(0px)) {
+    .chat-input-area {
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* =======================
+   MOBILE TOUCH TARGETS
+   ======================= */
+
+@media (max-width: 768px) {
+  /* Ensure all interactive elements are at least 48x48px */
+  button,
+  .btn,
+  [role="button"],
+  a,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 16px;
+  }
+
+  /* Adjust for smaller screens */
+  button.small,
+  .btn.small {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Reduce padding on very small screens */
+  @media (max-width: 480px) {
+    button,
+    .btn,
+    [role="button"] {
+      padding: 10px 14px;
+    }
+  }
+}
+
+/* =======================
+   MOBILE KEYBOARD HANDLING
+   ======================= */
+
+/* Prevent zoom on input focus (mobile) */
+input,
+textarea,
+select {
+  font-size: 16px; /* Prevents auto-zoom on iOS */
+}
+
+/* Hide address bar on scroll */
+@media (max-width: 768px) {
+  body {
+    height: 100vh;
+    height: 100dvh; /* 100% of dynamic viewport height */
+  }
+
+  .chat-messages {
+    max-height: calc(100vh - 200px);
+    max-height: calc(100dvh - 200px);
+  }
+}
+
+/* =======================
+   LANDSCAPE MODE
+   ======================= */
+
+@media (max-height: 500px) {
+  .chat-header {
+    padding: 8px 12px;
+  }
+
+  .chat-input-area {
+    padding: 8px 12px;
+  }
+
+  .chat-messages {
+    padding-bottom: 70px;
+  }
+}
+
+/* =======================
+   HAPTIC FEEDBACK
+   ======================= */
+
+.swipe-active {
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+/* Visual feedback for touch */
+@media (hover: none) and (pointer: coarse) {
+  button:active,
+  .btn:active,
+  [role="button"]:active {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.98);
+  }
+}
+
+/* =======================
+   LANGUAGE-SPECIFIC TWEAKS
+   ======================= */
+
+/* Chinese text optimization */
+.lang-zh body,
+.lang-zh [dir="ltr"] {
+  letter-spacing: 0;
+  word-break: break-word;
+}
+
+/* Hindi text optimization */
+.lang-hi body,
+.lang-hi [dir="ltr"] {
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+/* Arabic/Farsi narrow text optimization */
+.lang-ar body,
+.lang-fa body,
+.lang-he body {
+  letter-spacing: 0.3px;
+}
+
+/* RTL input styling */
+.lang-ar input,
+.lang-fa input,
+.lang-he input,
+.lang-ar textarea,
+.lang-fa textarea,
+.lang-he textarea {
+  text-align: right;
+  direction: rtl;
+}
+
+/* RTL form labels */
+.lang-ar label,
+.lang-fa label,
+.lang-he label {
+  display: block;
+  text-align: right;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* =======================
+   ACCESSIBILITY WITH MOBILE
+   ======================= */
+
+/* Focus visible on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  button:focus-visible,
+  .btn:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 4px;
+  }
+}
+
+/* Reduce motion for animations on mobile */
+@media (prefers-reduced-motion: reduce) {
+  .chat-input-area,
+  .swipe-active {
+    animation: none;
+    transition: none;
+  }
+
+  .message-group.me .message,
+  .message-group.stranger .message {
+    animation: none;
+  }
+}
+
+/* =======================
+   PERFORMANCE
+   ======================= */
+
+/* Use transform for animations (GPU accelerated) */
+.chat-input-area {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.message-group {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Reduce repaints */
+.typing-indicator {
+  will-change: opacity;
+}

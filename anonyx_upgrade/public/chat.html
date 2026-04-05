@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Start Anonymous Chat | Anonyx</title>
   <meta name="description" content="Start anonymous chat on Anonyx with smart matching, cleaner UI, and safer chat tools." />
   <meta name="robots" content="index, follow" />
@@ -12,19 +16,32 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://anonyx.online/og-image.jpg" />
   <link rel="canonical" href="https://anonyx.online/chat" />
-  <link rel="icon" href="/favicon.ico" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/style.css" />
   <link rel="stylesheet" href="/anonyx.css" />
+  <link rel="stylesheet" href="/chat-app.css" />
+  <link rel="stylesheet" href="/mobile-rtl.css" />
+  <script src="/vendor/crypto-js.js"></script>
 </head>
-<body>
-  <div class="chat-page">
+<body class="chat-route">
+  <div class="chat-page" id="chatPageRoot">
     <header class="chat-header">
       <div class="chat-header-inner">
         <a href="/" class="chat-logo">Anonyx</a>
         <div class="chat-meta-bar">
-          <div class="chat-status"><span class="status-dot"></span><span id="online">Users Online: 0</span></div>
+          <div class="chat-status"><span class="status-dot"></span><span id="online" data-i18n="chat.looking_for">Looking for someone compatible...</span></div>
           <div class="pill" id="matchQuality">Ready</div>
+          <select id="themeSelect" class="theme-select">
+            <option value="default">Default</option>
+            <option value="blue">Blue</option>
+            <option value="purple">Purple</option>
+            <option value="green">Green</option>
+          </select>
           <button id="themeToggle" type="button" class="icon-btn" aria-label="Toggle compact mode">◐</button>
+          <div class="lang-selector-wrapper">
+            <button class="lang-selector-btn" aria-label="Select language" title="Language">🌐</button>
+            <div data-component="language-selector"></div>
+          </div>
         </div>
       </div>
     </header>
@@ -33,84 +50,150 @@
       <section id="setup" class="setup-card">
         <div class="setup-top">
           <span class="setup-badge">Anonymous • Random • Instant</span>
-          <h1>Start Anonymous Chat</h1>
-          <p>Choose your preferences and connect with a stranger instantly. Safer, cleaner, and faster.</p>
+          <h1 data-i18n="chat.start_chat">Start Chat</h1>
+          <p data-i18n="chat.searching">Looking for someone compatible...</p>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
-            <label for="gender">Your Gender</label>
-            <select id="gender">
-              <option value="male">Male</option>
-              <option value="female">Female</option>
+            <label for="gender" data-i18n="chat.your_gender">Your Gender</label>
+            <select id="gender" aria-label="Select your gender">
+              <option value="male" data-i18n="chat.male">Male</option>
+              <option value="female" data-i18n="chat.female">Female</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="preference">Interested In</label>
-            <select id="preference">
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="both">Both</option>
+            <label for="preference" data-i18n="chat.interested_in">Interested In</label>
+            <select id="preference" aria-label="Select gender of people you want to meet">
+              <option value="male" data-i18n="chat.male">Male</option>
+              <option value="female" data-i18n="chat.female">Female</option>
+              <option value="both" data-i18n="chat.both">Both</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="language">Language</label>
-            <select id="language">
+            <label for="language" data-i18n="chat.language">Language</label>
+            <select id="language" aria-label="Select preferred language for chat">
               <option value="English">English</option>
               <option value="Hindi">Hindi</option>
               <option value="Both">Both</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="interests">Interests (comma separated)</label>
-            <input id="interests" type="text" maxlength="60" placeholder="gaming, music, coding" />
+            <label for="interests" data-i18n="chat.interests">Interests (comma separated)</label>
+            <input id="interests" type="text" maxlength="60" data-i18n-placeholder="chat.interests_placeholder" placeholder="gaming, music, coding" aria-label="Enter your interests separated by commas, up to 5 interests" />
+          </div>
+        </div>
+
+        <div class="group-setup" style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08);">
+          <h2 class="group-setup-title" style="font-size: 1rem; margin: 0 0 0.35rem 0;">Group chat</h2>
+          <p style="font-size: 0.85rem; opacity: 0.85; margin: 0 0 0.75rem 0;">Create a room or join with a code (up to 8 people). Messages use the same encryption style as 1:1.</p>
+          <div class="group-setup-row" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+            <button type="button" id="groupCreateBtn" class="btn btn-secondary">Create group</button>
+            <input type="text" id="groupJoinInput" maxlength="20" placeholder="Room code" autocomplete="off" aria-label="Group room code" style="min-width: 120px; padding: 0.5rem 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: inherit;" />
+            <button type="button" id="groupJoinBtn" class="btn btn-secondary">Join group</button>
           </div>
         </div>
 
         <div class="setup-actions">
-          <button id="startBtn" type="button" class="btn btn-primary">Start Chat</button>
-          <a href="/" class="btn btn-secondary">Back Home</a>
+          <button id="startBtn" type="button" class="btn btn-primary" data-i18n="chat.start_chat" aria-label="Start anonymous chat with these preferences">Start Chat</button>
+          <a href="/" class="btn btn-secondary" data-i18n="chat.back_home" data-action="back">Back Home</a>
         </div>
       </section>
 
-      <section id="chat" class="chat-card hidden">
-        <div class="chat-topbar">
-          <div>
-            <h2>Anonymous Chat Room</h2>
-            <p id="chatHint">Be respectful. Never share personal information.</p>
+      <section id="chat" class="chat-card chat-shell hidden">
+        <header class="chat-app-header">
+          <button type="button" id="chatBackBtn" class="chat-back-btn" aria-label="Leave conversation">←</button>
+          <div class="chat-app-title-block">
+            <h2 id="chatTitle" class="chat-app-title" data-i18n="chat.anonymous_chat_room">Chat</h2>
+            <p id="chatHint" class="chat-app-subtitle" data-i18n="chat.be_respectful">Be respectful. Never share personal information.</p>
           </div>
-          <div class="topbar-actions">
-            <div class="pill" id="chatTimer">00:00</div>
-            <button id="muteBtn" type="button" class="btn btn-secondary">Mute</button>
-            <button id="reportBtn" type="button" class="btn btn-danger">Report</button>
-            <button id="skipBtn" type="button" class="btn btn-secondary">Skip Stranger</button>
+          <button type="button" id="chatMenuBtn" class="chat-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="chatDrawer">⋮</button>
+        </header>
+
+        <div id="groupInviteBar" class="group-invite-bar hidden" aria-label="Group invite">
+          <div class="group-invite-inner">
+            <span class="group-invite-label">Invite friends</span>
+            <code id="groupInviteCodeDisplay"></code>
+            <button type="button" id="copyInviteBtn" class="app-icon-btn">Copy link</button>
+            <div class="group-qr-wrap">
+              <img id="groupQrImg" width="108" height="108" alt="QR code for group invite" />
+            </div>
+          </div>
+        </div>
+        <div id="groupInviteGuestHint" class="group-guest-hint hidden">
+          <p>Only the host can share the invite link. Ask them for the code.</p>
+        </div>
+
+        <div class="chat-topbar desktop-chat-toolbar">
+          <div class="topbar-actions desktop-only-bar">
+            <div class="pill" id="chatTimer" aria-label="Chat duration timer">00:00</div>
+            <button id="muteBtn" type="button" class="btn btn-secondary" data-i18n="chat.mute" aria-label="Toggle sounds for this tab">Sounds</button>
+            <button id="reportBtn" type="button" class="btn btn-danger" data-i18n="chat.report" aria-label="Report user for abuse or harassment">Report</button>
+            <button id="skipBtn" type="button" class="btn btn-secondary" data-i18n="chat.skip_stranger" data-action="skip" aria-label="Skip and find a new stranger">Skip</button>
+            <button id="leaveGroupBtn" type="button" class="btn btn-secondary hidden" aria-label="Leave group room">Leave group</button>
           </div>
         </div>
 
-        <div id="searchState" class="search-state">Looking for someone compatible...</div>
-        <div id="messages" class="messages-box"></div>
-        <div id="typing" class="typing-box"></div>
+        <div id="chatDrawerBackdrop" class="chat-drawer-backdrop" aria-hidden="true"></div>
+        <aside id="chatDrawer" class="chat-drawer" role="dialog" aria-label="Chat menu" aria-modal="true" aria-hidden="true">
+          <h3>Chat</h3>
+          <div class="chat-drawer-row"><span class="pill" id="chatTimerDrawer">00:00</span></div>
+          <div class="chat-drawer-row">
+            <label><input type="checkbox" id="readReceiptsToggle" checked /> Read receipts</label>
+          </div>
+          <div class="chat-drawer-row">
+            <label class="chat-drawer-label-nr" for="themeSelectDrawer">Theme</label>
+            <select id="themeSelectDrawer" class="theme-select">
+              <option value="default">Default</option>
+              <option value="blue">Blue</option>
+              <option value="purple">Purple</option>
+              <option value="green">Green</option>
+            </select>
+          </div>
+          <div class="chat-drawer-row">
+            <button type="button" class="btn btn-secondary drawer-sound-btn" id="muteBtnDrawer">Sounds on</button>
+          </div>
+          <div class="chat-drawer-row">
+            <button type="button" class="btn btn-danger" id="reportBtnDrawer">Report</button>
+            <button type="button" class="btn btn-secondary" id="skipBtnDrawer">Skip stranger</button>
+            <button type="button" class="btn btn-secondary hidden" id="leaveGroupBtnDrawer">Leave group</button>
+            <a href="/" class="btn btn-secondary" style="display:inline-flex;text-decoration:none;align-items:center;justify-content:center;">Home</a>
+          </div>
+        </aside>
 
-        <div id="replyBox" class="reply-box">
+        <div id="searchState" class="search-state hidden" role="status" aria-live="polite">
+          <p data-i18n="chat.searching">Looking for someone compatible...</p>
+          <div class="sk-group">
+            <div class="skeleton sk-msg left"></div>
+            <div class="skeleton sk-msg right"></div>
+            <div class="skeleton sk-msg left"></div>
+          </div>
+        </div>
+        <div id="messages" class="messages-box" role="log" aria-label="Chat messages" aria-live="polite" aria-atomic="false"></div>
+        <div id="typing" class="typing-box" role="status" aria-live="polite" aria-label="Typing indicator"></div>
+
+        <div id="replyBox" class="reply-box" role="complementary" aria-label="Reply to message">
           <div id="replyText"></div>
           <button id="cancelReplyBtn" type="button" aria-label="Cancel reply">✕</button>
         </div>
 
-        <div id="imagePreview" class="image-preview hidden">
-          <img id="imagePreviewTag" alt="Selected preview" />
+        <div id="imagePreview" class="image-preview hidden" role="region" aria-label="Image preview">
+          <img id="imagePreviewTag" alt="Selected image preview" />
           <div class="image-preview-actions">
             <span id="imagePreviewName"></span>
-            <button id="cancelImageBtn" type="button" class="btn btn-secondary">Remove</button>
+            <button id="cancelImageBtn" type="button" class="btn btn-secondary" data-i18n="chat.removing" aria-label="Remove selected image">Remove</button>
           </div>
         </div>
 
-        <div class="input-bar">
-          <input id="msg" type="text" maxlength="300" placeholder="Type your message..." autocomplete="off" />
-          <input type="file" id="imgInput" accept="image/png,image/jpeg,image/webp,image/gif" />
-          <button id="imgBtn" type="button" class="btn btn-secondary image-upload-btn">Image</button>
-          <button id="sendBtn" type="button" class="btn btn-primary">Send</button>
+        <div class="chat-composer-wrap">
+          <div class="input-bar">
+            <input id="msg" type="text" maxlength="300" data-i18n-placeholder="chat.type_message" placeholder="Message" autocomplete="off" aria-label="Message input field" />
+            <input type="file" id="imgInput" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="Upload image file" />
+            <button id="imgBtn" type="button" class="btn btn-secondary image-upload-btn" data-i18n="chat.image" aria-label="Attach image" title="Attach">📎</button>
+            <button id="sendBtn" type="button" class="btn btn-primary" data-i18n="chat.send" aria-label="Send message">➤</button>
+          </div>
+          <div class="chat-footer-note" data-i18n="chat.press_enter">Enter to send · Images expire</div>
         </div>
-        <div class="chat-footer-note">Press Enter to send. Images disappear after a few seconds.</div>
       </section>
     </main>
   </div>
@@ -123,6 +206,9 @@
 </div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/experiments.js"></script>
+  <script src="/i18n/i18n.js"></script>
+  <script src="/mobile-enhancements.js"></script>
   <script src="/script.js"></script>
 </body>
 </html>

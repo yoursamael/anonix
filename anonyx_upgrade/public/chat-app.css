@@ -1,0 +1,394 @@
+/* Mobile-first “app” shell — Telegram / WhatsApp–like chat layout */
+
+:root {
+  --app-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --app-safe-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  --app-safe-top: max(0px, env(safe-area-inset-top, 0px));
+}
+
+body.chat-route {
+  font-family: var(--app-font);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+.chat-page--conversation {
+  min-height: 100dvh;
+  min-height: 100vh;
+}
+
+.chat-page--conversation .chat-header {
+  display: none;
+}
+
+.chat-page--conversation .chat-main {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.chat-shell {
+  border-radius: 0 !important;
+  max-width: none !important;
+  width: 100% !important;
+  min-height: 100dvh !important;
+  min-height: 100vh !important;
+  height: 100dvh !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: linear-gradient(180deg, #0a0e1a 0%, #070b14 40%, #060912 100%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Higher specificity than `.chat-shell` alone — otherwise `display:flex !important`
+   overrides `.hidden` (same specificity, later sheet wins) and setup + chat show together. */
+.chat-card.hidden,
+.chat-shell.hidden {
+  display: none !important;
+}
+
+.chat-app-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(10px + var(--app-safe-top)) 12px 10px;
+  flex-shrink: 0;
+  background: rgba(10, 14, 26, 0.94);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  z-index: 40;
+}
+
+.chat-back-btn,
+.chat-menu-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.chat-back-btn:active,
+.chat-menu-btn:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-app-title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-app-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-app-subtitle,
+#chatHint.chat-app-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-invite-bar {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  background: rgba(124, 92, 255, 0.1);
+  border-bottom: 1px solid rgba(124, 92, 255, 0.22);
+}
+
+.group-invite-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.group-invite-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #c4b5fd;
+  font-weight: 700;
+}
+
+#groupInviteCodeDisplay {
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.app-icon-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(41, 211, 145, 0.15);
+  color: #6ee7b7;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.app-icon-btn:active {
+  transform: scale(0.98);
+}
+
+.group-qr-wrap {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.group-qr-wrap img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.group-guest-hint {
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.group-guest-hint p {
+  margin: 0;
+}
+
+.chat-shell .search-state {
+  margin: 0 12px;
+  border-radius: 16px;
+}
+
+.chat-shell .messages-box {
+  flex: 1;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  padding: 12px 12px 8px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.chat-shell .message {
+  max-width: min(88%, 420px);
+  border-radius: 18px;
+  padding: 10px 14px 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+
+.chat-shell .message.me {
+  border-bottom-right-radius: 6px;
+}
+
+.chat-shell .message.stranger {
+  border-bottom-left-radius: 6px;
+}
+
+.msg-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.message.stranger .msg-meta {
+  justify-content: flex-start;
+}
+
+.msg-ticks {
+  font-size: 0.72rem;
+  line-height: 1;
+  color: #64748b;
+  letter-spacing: -2px;
+}
+
+.msg-ticks[data-state="delivered"] {
+  color: #94a3b8;
+}
+
+.msg-ticks[data-state="read"] .msg-tick--read,
+.msg-ticks[data-state="read"] {
+  color: #34d399;
+}
+
+.chat-composer-wrap {
+  flex-shrink: 0;
+  padding: 10px 12px calc(12px + var(--app-safe-bottom));
+  background: rgba(7, 11, 22, 0.96);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-shell .reply-box {
+  margin: 0 12px 8px;
+  border-radius: 14px;
+}
+
+.chat-shell .image-preview {
+  margin: 0 12px 8px;
+}
+
+.chat-shell .input-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  grid-template-columns: unset;
+}
+
+.chat-shell #msg {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  border-radius: 22px;
+  padding: 0 16px;
+}
+
+.chat-shell .input-bar .btn {
+  min-height: 46px;
+  min-width: 46px;
+  padding: 0 14px;
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+
+.chat-shell .chat-footer-note {
+  text-align: center;
+  margin-top: 6px;
+  font-size: 0.7rem;
+  opacity: 0.75;
+}
+
+.chat-shell .typing-box,
+.chat-shell #typing {
+  padding: 0 16px 4px;
+  min-height: 20px;
+}
+
+/* Drawer */
+.chat-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.chat-drawer-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chat-drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(300px, 88vw);
+  background: #0f141f;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 210;
+  padding: calc(16px + var(--app-safe-top)) 16px 24px;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+}
+
+.chat-drawer.is-open {
+  transform: translateX(0);
+}
+
+.chat-drawer h3 {
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.chat-drawer-row {
+  margin-bottom: 14px;
+}
+
+.chat-drawer-row label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.chat-drawer .btn,
+.chat-drawer .btn-danger,
+.chat-drawer .btn-secondary {
+  width: 100%;
+  margin-bottom: 8px;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.chat-drawer .theme-select {
+  width: 100%;
+  min-height: 48px;
+}
+
+.desktop-only-bar {
+  display: flex;
+}
+
+@media (max-width: 900px) {
+  .desktop-only-bar {
+    display: none;
+  }
+}
+
+/* Wide screens: center the chat column without undoing the full-height app shell or
+   bringing back the global header (that caused double headers + broken flex layout). */
+@media (min-width: 901px) {
+  .chat-page--conversation .chat-main {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+}
