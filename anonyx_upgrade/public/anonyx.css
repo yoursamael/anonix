@@ -1,4 +1,4 @@
-.chat-page { min-height: 100vh; display: flex; flex-direction: column; }
+.chat-page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 .chat-header {
   position: sticky; top: 0; z-index: 50; backdrop-filter: blur(14px);
   background: rgba(7, 11, 22, 0.72); border-bottom: 1px solid rgba(255,255,255,.06);
@@ -90,7 +90,7 @@
 .form-group input::placeholder { color: #8f9abc; }
 .form-group select option { color: #000; }
 .setup-actions { display: flex; gap: 14px; flex-wrap: wrap; }
-.chat-card { max-width: 980px; min-height: 76vh; height: calc(100vh - 140px); padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.chat-card { max-width: 980px; min-height: 0; height: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
 .hidden { display: none !important; }
 .chat-topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; padding: 6px 4px 2px; }
 .chat-topbar h2 { margin: 0 0 6px; font-size: 1.45rem; }
@@ -103,7 +103,7 @@
   color: #ddd8ff; font-size: .92rem;
 }
 .messages-box {
-  flex: 1; min-height: 280px; overflow-y: auto; overflow-x: hidden; padding: 18px; border-radius: 20px;
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 18px; border-radius: 20px;
   background: linear-gradient(180deg, rgba(5,9,20,.82), rgba(7,11,22,.92)); border: 1px solid rgba(255,255,255,.06);
   display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth;
 }
@@ -169,7 +169,7 @@
 @media (max-width: 900px) {
   .chat-main { width: 94%; padding: 18px 0 26px; }
   .setup-card { padding: 24px; }
-  .chat-card { height: calc(100vh - 120px); }
+  .chat-card { height: auto; min-height: 0; }
   .form-grid { grid-template-columns: 1fr; }
   .chat-topbar { flex-direction: column; align-items: flex-start; }
   .message { max-width: 86%; }
@@ -182,7 +182,7 @@
   .setup-card { padding: 20px; }
   .setup-actions { flex-direction: column; }
   .setup-actions .btn { width: 100%; }
-  .chat-card { height: calc(100vh - 94px); min-height: 560px; padding: 12px; gap: 10px; }
+  .chat-card { height: auto; min-height: 0; padding: 12px; gap: 10px; }
   .messages-box { padding: 14px; border-radius: 16px; }
   .message { max-width: 90%; font-size: .92rem; padding: 10px 12px; }
   .input-bar { grid-template-columns: 1fr; }

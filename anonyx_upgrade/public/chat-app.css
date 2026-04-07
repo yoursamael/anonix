@@ -392,3 +392,118 @@ body.chat-route {
     width: 100%;
   }
 }
+
+
+/* ===== Mobile keyboard + viewport stability fix ===== */
+.chat-page--conversation {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.chat-page--conversation .chat-main {
+  min-height: 0;
+}
+
+.chat-shell {
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+.chat-shell .messages-box {
+  padding-bottom: 12px;
+}
+
+.chat-shell .chat-composer-wrap {
+  position: sticky;
+  bottom: 0;
+  z-index: 25;
+}
+
+.chat-shell .input-bar {
+  grid-template-columns: unset;
+}
+
+.chat-shell #msg {
+  width: auto;
+}
+
+@media (max-width: 768px) {
+  html,
+  body,
+  body.chat-route {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .chat-page,
+  .chat-page--conversation,
+  #chatPageRoot {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .chat-page--conversation .chat-main {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  .chat-shell {
+    border-radius: 0 !important;
+  }
+
+  .chat-shell .chat-app-header,
+  .chat-shell .group-invite-bar,
+  .chat-shell .group-guest-hint,
+  .chat-shell .search-state,
+  .chat-shell .typing-box,
+  .chat-shell #typing,
+  .chat-shell .chat-composer-wrap {
+    flex-shrink: 0;
+  }
+
+  .chat-shell .messages-box {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    height: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .chat-shell .chat-composer-wrap {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: rgba(7, 11, 22, 0.98);
+  }
+
+  .chat-shell .input-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chat-shell .input-bar .btn {
+    width: 46px;
+    min-width: 46px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
