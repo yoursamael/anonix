@@ -1,6 +1,11 @@
+/**
+ * Production-level Real-time Anonymous Chat Script
+ * Refactored for stability, mobile UX, and removed obsolete fields.
+ */
+
 let userId = sessionStorage.getItem("anonyx_sid");
 if (!userId) {
-  userId = localStorage.getItem("anonyx_user") || crypto.randomUUID();
+  userId = localStorage.getItem("anonyx_user") || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `u_${Date.now()}`);
   sessionStorage.setItem("anonyx_sid", userId);
   localStorage.setItem("anonyx_user", userId);
 }
@@ -21,69 +26,79 @@ let groupOwnerUserId = null;
 let groupInviteLocked = true;
 let lastReadAllSent = 0;
 
-const chatPageRoot = document.getElementById("chatPageRoot");
-const chatTitle = document.getElementById("chatTitle");
-const chatMenuBtn = document.getElementById("chatMenuBtn");
-const chatBackBtn = document.getElementById("chatBackBtn");
-const chatDrawer = document.getElementById("chatDrawer");
-const chatDrawerBackdrop = document.getElementById("chatDrawerBackdrop");
-const groupInviteBar = document.getElementById("groupInviteBar");
-const groupInviteGuestHint = document.getElementById("groupInviteGuestHint");
-const groupInviteCodeDisplay = document.getElementById("groupInviteCodeDisplay");
-const copyInviteBtn = document.getElementById("copyInviteBtn");
-const groupQrImg = document.getElementById("groupQrImg");
-const readReceiptsToggle = document.getElementById("readReceiptsToggle");
-const themeSelectDrawer = document.getElementById("themeSelectDrawer");
-const chatTimerDrawer = document.getElementById("chatTimerDrawer");
-const muteBtnDrawer = document.getElementById("muteBtnDrawer");
-const reportBtnDrawer = document.getElementById("reportBtnDrawer");
-const skipBtnDrawer = document.getElementById("skipBtnDrawer");
-const leaveGroupBtnDrawer = document.getElementById("leaveGroupBtnDrawer");
+// Safe element retriever helper
+const getEl = (id) => document.getElementById(id);
 
-const messages = document.getElementById("messages");
-const typingDiv = document.getElementById("typing");
-const replyBox = document.getElementById("replyBox");
-const replyText = document.getElementById("replyText");
-const msgInput = document.getElementById("msg");
-const imgInput = document.getElementById("imgInput");
-const onlineEl = document.getElementById("online");
-const setupSection = document.getElementById("setup");
-const chatSection = document.getElementById("chat");
-const searchState = document.getElementById("searchState");
-const chatTimer = document.getElementById("chatTimer");
-const imagePreview = document.getElementById("imagePreview");
-const imagePreviewTag = document.getElementById("imagePreviewTag");
-const imagePreviewName = document.getElementById("imagePreviewName");
-const matchQuality = document.getElementById("matchQuality");
-const chatHint = document.getElementById("chatHint");
-const themeToggle = document.getElementById("themeToggle");
-const themeSelect = document.getElementById("themeSelect");
-const muteBtn = document.getElementById("muteBtn");
-const leaveGroupBtn = document.getElementById("leaveGroupBtn");
-const groupCreateBtn = document.getElementById("groupCreateBtn");
-const groupJoinBtn = document.getElementById("groupJoinBtn");
-const groupJoinInput = document.getElementById("groupJoinInput");
+const chatPageRoot = getEl("chatPageRoot");
+const chatTitle = getEl("chatTitle");
+const chatMenuBtn = getEl("chatMenuBtn");
+const chatBackBtn = getEl("chatBackBtn");
+const chatDrawer = getEl("chatDrawer");
+const chatDrawerBackdrop = getEl("chatDrawerBackdrop");
+const groupInviteBar = getEl("groupInviteBar");
+const groupInviteGuestHint = getEl("groupInviteGuestHint");
+const groupInviteCodeDisplay = getEl("groupInviteCodeDisplay");
+const copyInviteBtn = getEl("copyInviteBtn");
+const groupQrImg = getEl("groupQrImg");
+const readReceiptsToggle = getEl("readReceiptsToggle");
+const themeSelectDrawer = getEl("themeSelectDrawer");
+const chatTimerDrawer = getEl("chatTimerDrawer");
+const muteBtnDrawer = getEl("muteBtnDrawer");
+const reportBtnDrawer = getEl("reportBtnDrawer");
+const skipBtnDrawer = getEl("skipBtnDrawer");
+const leaveGroupBtnDrawer = getEl("leaveGroupBtnDrawer");
 
-const startBtn = document.getElementById("startBtn");
-const sendBtn = document.getElementById("sendBtn");
-const skipBtn = document.getElementById("skipBtn");
-const reportBtn = document.getElementById("reportBtn");
-const cancelReplyBtn = document.getElementById("cancelReplyBtn");
-const imgBtn = document.getElementById("imgBtn");
-const cancelImageBtn = document.getElementById("cancelImageBtn");
+const messages = getEl("messages");
+const typingDiv = getEl("typing");
+const replyBox = getEl("replyBox");
+const replyText = getEl("replyText");
+const msgInput = getEl("msg");
+const imgInput = getEl("imgInput");
+const onlineEl = getEl("online");
+const setupSection = getEl("setup");
+const chatSection = getEl("chat");
+const searchState = getEl("searchState");
+const chatTimer = getEl("chatTimer");
+const imagePreview = getEl("imagePreview");
+const imagePreviewTag = getEl("imagePreviewTag");
+const imagePreviewName = getEl("imagePreviewName");
+const matchQuality = getEl("matchQuality");
+const chatHint = getEl("chatHint");
+const themeToggle = getEl("themeToggle");
+const themeSelect = getEl("themeSelect");
+const muteBtn = getEl("muteBtn");
+const leaveGroupBtn = getEl("leaveGroupBtn");
+const groupCreateBtn = getEl("groupCreateBtn");
+const groupJoinBtn = getEl("groupJoinBtn");
+const groupJoinInput = getEl("groupJoinInput");
+
+const startBtn = getEl("startBtn");
+const sendBtn = getEl("sendBtn");
+const skipBtn = getEl("skipBtn");
+const reportBtn = getEl("reportBtn");
+const cancelReplyBtn = getEl("cancelReplyBtn");
+const imgBtn = getEl("imgBtn");
+const cancelImageBtn = getEl("cancelImageBtn");
 
 if (window.AnonyxExperiments) {
   AnonyxExperiments.bootstrap(userId).catch(() => {});
 }
 
+/**
+ * FIXED: Enhanced smartScroll for mobile.
+ * Uses a small timeout to ensure the DOM has updated before calculating height.
+ */
 function smartScroll(container, force = false) {
   if (!container) return;
-  const distanceFromBottom =
-    container.scrollHeight - container.scrollTop - container.clientHeight;
-  const shouldStick = force || distanceFromBottom < 120;
-  if (shouldStick) {
-    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
-  }
+  const scroll = () => {
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    const shouldStick = force || distanceFromBottom < 150;
+    if (shouldStick) {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    }
+  };
+  // Use timeout to allow mobile keyboard layout shifts to complete
+  setTimeout(scroll, 50);
 }
 
 function throttle(fn, wait = 450) {
@@ -94,10 +109,7 @@ function throttle(fn, wait = 450) {
     const remaining = wait - (now - last);
     if (remaining <= 0) {
       last = now;
-      if (timeout) {
-        clearTimeout(timeout);
-        timeout = null;
-      }
+      if (timeout) { clearTimeout(timeout); timeout = null; }
       fn(...args);
       return;
     }
@@ -127,7 +139,7 @@ function startSearchHints() {
   if (!searchState) return;
   searchState.innerText = searchHints[0];
   searchHintTimer = setInterval(() => {
-    if (!searchState.classList.contains("hidden")) {
+    if (searchState && !searchState.classList.contains("hidden")) {
       idx = (idx + 1) % searchHints.length;
       searchState.innerText = searchHints[idx];
     }
@@ -159,7 +171,7 @@ function readReceiptsOn() {
 }
 
 function generateMsgId() {
-  return typeof crypto !== "undefined" && crypto.randomUUID
+  return (typeof crypto !== "undefined" && crypto.randomUUID)
     ? crypto.randomUUID()
     : `m_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
@@ -282,10 +294,7 @@ copyInviteBtn?.addEventListener("click", async () => {
 });
 
 chatBackBtn?.addEventListener("click", () => {
-  const msg =
-    chatMode === "group"
-      ? "Leave this group and go back?"
-      : "Leave this chat? Your match will end.";
+  const msg = chatMode === "group" ? "Leave this group and go back?" : "Leave this chat? Your match will end.";
   if (!confirm(msg)) return;
   if (chatMode === "group") leaveGroupChat();
   else skip();
@@ -325,10 +334,10 @@ socket.on("session:sync", (s) => {
       stopSearchHints();
       resetGroupClientState();
       if (wasOpen) {
-        setupSection.classList.remove("hidden");
-        chatSection.classList.add("hidden");
-        messages.innerHTML = "";
-        matchQuality.innerText = "Ready";
+        if (setupSection) setupSection.classList.remove("hidden");
+        if (chatSection) chatSection.classList.add("hidden");
+        if (messages) messages.innerHTML = "";
+        if (matchQuality) matchQuality.innerText = "Ready";
         setConversationMode(false);
         addSystem("You are not in an active chat room. Use Start Chat or join a group when you are ready.");
       }
@@ -342,10 +351,7 @@ socket.on("session:sync", (s) => {
     room = true;
     groupOwnerUserId = s.ownerUserId || null;
     groupInviteLocked = s.inviteLocked !== false;
-    openGroupShell(
-      s.inviteCode ? `Code · ${s.inviteCode}` : "Group room",
-      s.inviteCode || ""
-    );
+    openGroupShell(s.inviteCode ? `Code · ${s.inviteCode}` : "Group room", s.inviteCode || "");
     return;
   }
   if (s.mode === "dm" && s.active) {
@@ -353,10 +359,10 @@ socket.on("session:sync", (s) => {
     groupRoomId = null;
     room = true;
     encryptionKey = "true";
-    setupSection.classList.add("hidden");
-    chatSection.classList.remove("hidden");
-    searchState.classList.add("hidden");
-    matchQuality.innerText = "Matched";
+    if (setupSection) setupSection.classList.add("hidden");
+    if (chatSection) chatSection.classList.remove("hidden");
+    if (searchState) searchState.classList.add("hidden");
+    if (matchQuality) matchQuality.innerText = "Matched";
     setChatHeaderTitle("Stranger", "Connected. Be respectful and use report if needed.");
     setConversationMode(true);
     if (leaveGroupBtn) leaveGroupBtn.classList.add("hidden");
@@ -384,14 +390,14 @@ function resetGroupClientState() {
 function openGroupShell(subtitle, codeForTitle) {
   stopSearchHints();
   chatMode = "group";
-  setupSection.classList.add("hidden");
-  chatSection.classList.remove("hidden");
-  messages.innerHTML = "";
+  if (setupSection) setupSection.classList.add("hidden");
+  if (chatSection) chatSection.classList.remove("hidden");
+  if (messages) messages.innerHTML = "";
   cancelReply();
   clearImagePreview();
   stopTimer();
-  searchState.classList.add("hidden");
-  matchQuality.innerText = "Group";
+  if (searchState) searchState.classList.add("hidden");
+  if (matchQuality) matchQuality.innerText = "Group";
   const title = codeForTitle ? `Group · ${codeForTitle}` : "Group";
   setChatHeaderTitle(title, subtitle || "Group room — stay respectful.");
   setConversationMode(true);
@@ -406,34 +412,38 @@ function leaveGroupChat() {
   stopSearchHints();
   socket.emit("group:leave");
   resetGroupClientState();
-  setupSection.classList.remove("hidden");
-  chatSection.classList.add("hidden");
-  messages.innerHTML = "";
-  matchQuality.innerText = "Ready";
+  if (setupSection) setupSection.classList.remove("hidden");
+  if (chatSection) chatSection.classList.add("hidden");
+  if (messages) messages.innerHTML = "";
+  if (matchQuality) matchQuality.innerText = "Ready";
   syncComposerState();
   setConversationMode(false);
 }
 
+/**
+ * FIXED: Removed language and interests dependencies.
+ * Uses safe value retrieval for gender and preference.
+ */
 function startChat() {
-  const gender = document.getElementById("gender").value;
-  const preference = document.getElementById("preference").value;
-  const language = document.getElementById("language").value;
-  const interests = document
-    .getElementById("interests")
-    .value.split(",")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 5);
+  const gender = getEl("gender")?.value || "unspecified";
+  const preference = getEl("preference")?.value || "all";
 
-  console.log("Emitting start with:", { gender, preference, language, interests });
+  // Language and interests removed from HTML, safely passing defaults
+  const language = "en";
+  const interests = [];
+
+  console.log("Emitting start with:", { gender, preference });
   resetGroupClientState();
   socket.emit("start", { gender, preference, language, interests });
 
-  setupSection.classList.add("hidden");
-  chatSection.classList.remove("hidden");
-  messages.innerHTML = "";
-  searchState.classList.remove("hidden");
-  matchQuality.innerText = "Searching";
+  if (setupSection) setupSection.classList.add("hidden");
+  if (chatSection) chatSection.classList.remove("hidden");
+  if (messages) messages.innerHTML = "";
+  if (searchState) {
+    searchState.classList.remove("hidden");
+    searchState.innerText = "Finding someone...";
+  }
+  if (matchQuality) matchQuality.innerText = "Searching";
   setChatHeaderTitle("Matching", "Looking for someone…");
   setConversationMode(true);
   startSearchHints();
@@ -478,13 +488,11 @@ function playTick() {
     gainNode.connect(audioContext.destination);
     oscillator.start();
     oscillator.stop(audioContext.currentTime + 0.08);
-  } catch (error) {
-    // ignore audio issues
-  }
+  } catch (error) {}
 }
 
 socket.on("online", (count) => {
-  onlineEl.innerText = `Users Online: ${count}`;
+  if (onlineEl) onlineEl.innerText = `Users Online: ${count}`;
 });
 
 socket.on("searching", () => {
@@ -492,8 +500,8 @@ socket.on("searching", () => {
   room = null;
   encryptionKey = null;
   stopTimer();
-  matchQuality.innerText = "Searching";
-  searchState.classList.remove("hidden");
+  if (matchQuality) matchQuality.innerText = "Searching";
+  if (searchState) searchState.classList.remove("hidden");
   startSearchHints();
 });
 
@@ -506,13 +514,13 @@ socket.on("matched", (data) => {
   groupRoomId = null;
   room = true;
   encryptionKey = "true";
-  messages.innerHTML = "";
+  if (messages) messages.innerHTML = "";
   cancelReply();
   stopTimer();
   startTimer();
   stopSearchHints();
-  searchState.classList.add("hidden");
-  matchQuality.innerText = "Matched";
+  if (searchState) searchState.classList.add("hidden");
+  if (matchQuality) matchQuality.innerText = "Matched";
   setChatHeaderTitle("Stranger", "Connected. Be respectful and use report if needed.");
   setConversationMode(true);
   if (leaveGroupBtn) leaveGroupBtn.classList.add("hidden");
@@ -525,7 +533,7 @@ socket.on("matched", (data) => {
   }
   msgInput?.focus();
 
-  const popup = document.getElementById("matchPopup");
+  const popup = getEl("matchPopup");
   if (popup) {
     popup.classList.add("show");
     setTimeout(() => popup.classList.remove("show"), 2000);
@@ -535,8 +543,10 @@ socket.on("matched", (data) => {
 socket.on("system", (msg) => {
   addSystem(msg);
   if (/Searching|Waiting/i.test(msg)) {
-    searchState.classList.remove("hidden");
-    startSearchHints();
+    if (searchState) {
+      searchState.classList.remove("hidden");
+      startSearchHints();
+    }
     stopTimer();
   }
 });
@@ -553,7 +563,7 @@ socket.on("messageAck", (payload) => {
   setSendLoading(false);
   const mid = payload && payload.msgId;
   let el = mid ? findMeMessageByMsgId(mid) : null;
-  if (!el) {
+  if (!el && messages) {
     const pend = messages.querySelector(".message.me.pending");
     if (pend) el = pend;
   }
@@ -571,7 +581,7 @@ socket.on("dm:receipt", (p) => {
     const ticks = el && el.querySelector(".msg-ticks");
     if (ticks) ticks.dataset.state = "delivered";
   }
-  if (p.kind === "read_all") {
+  if (p.kind === "read_all" && messages) {
     messages.querySelectorAll(".message.me .msg-ticks").forEach((ticks) => {
       if (ticks.dataset.state && ticks.dataset.state !== "sending") ticks.dataset.state = "read";
     });
@@ -602,7 +612,7 @@ socket.on("group:joined", (payload) => {
 
 socket.on("group:roster", (payload) => {
   const n = payload && typeof payload.memberCount === "number" ? payload.memberCount : "?";
-  matchQuality.innerText = `Group (${n})`;
+  if (matchQuality) matchQuality.innerText = `Group (${n})`;
   if (payload && payload.ownerUserId) groupOwnerUserId = payload.ownerUserId;
   if (payload && typeof payload.inviteLocked === "boolean") groupInviteLocked = payload.inviteLocked;
   updateGroupInviteUi();
@@ -627,7 +637,7 @@ socket.on("group:message", (data) => {
       addStranger("Could not decrypt message", data.replyTo || null, who);
     }
   }
-  typingDiv.innerText = "";
+  if (typingDiv) typingDiv.innerText = "";
   playTick();
 });
 
@@ -638,40 +648,36 @@ socket.on("group:messageAck", () => {
 });
 
 socket.on("group:typing", () => {
-  typingDiv.innerHTML = `
-  <span class="typing-indicator">
-    Someone is typing
-    <span class="typing-dots">
-      <span></span><span></span><span></span>
-    </span>
-  </span>
-`;
+  if (typingDiv) {
+    typingDiv.innerHTML = `
+      <span class="typing-indicator">
+        Someone is typing
+        <span class="typing-dots"><span></span><span></span><span></span></span>
+      </span>`;
+  }
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
-    typingDiv.innerText = "";
+    if (typingDiv) typingDiv.innerText = "";
   }, 1200);
 });
 
 socket.on("group:shutdown", () => {
   addSystem("This group room was closed.");
   resetGroupClientState();
-  setupSection.classList.remove("hidden");
-  chatSection.classList.add("hidden");
-  messages.innerHTML = "";
-  matchQuality.innerText = "Ready";
+  if (setupSection) setupSection.classList.remove("hidden");
+  if (chatSection) chatSection.classList.add("hidden");
+  if (messages) messages.innerHTML = "";
+  if (matchQuality) matchQuality.innerText = "Ready";
   syncComposerState();
   setConversationMode(false);
-});
-
-socket.on("group:left", () => {
-  /* server ack; UI already updated locally if user initiated */
 });
 
 socket.on("message", (data) => {
   if (chatMode === "group") return;
   if (data.img) {
     try {
-      const decryptedImg = CryptoJS.AES.decrypt(data.img, encryptionKey || room).toString(CryptoJS.enc.Utf8);
+      const key = encryptionKey || room;
+      const decryptedImg = CryptoJS.AES.decrypt(data.img, key).toString(CryptoJS.enc.Utf8);
       addStrangerImage(decryptedImg, data.replyTo || null, data.imageId || null, data.expiresIn || 10000, null, data.msgId);
     } catch (e) {
       console.error("Image decryption failed", e);
@@ -679,37 +685,35 @@ socket.on("message", (data) => {
     }
   } else {
     try {
-      const decryptedMsg = CryptoJS.AES.decrypt(data.msg, encryptionKey || room).toString(CryptoJS.enc.Utf8);
+      const key = encryptionKey || room;
+      const decryptedMsg = CryptoJS.AES.decrypt(data.msg, key).toString(CryptoJS.enc.Utf8);
       addStranger(decryptedMsg, data.replyTo || null, null, data.msgId);
     } catch (e) {
       console.error("Message decryption failed", e);
       addStranger("Error: Could not decrypt message", data.replyTo || null, null, data.msgId);
     }
   }
-  typingDiv.innerText = "";
+  if (typingDiv) typingDiv.innerText = "";
   playTick();
   requestAnimationFrame(() => tryEmitReadAll());
 });
 
-// Remove socket.on("image") since it's merged into "message"
-
 socket.on("typing", () => {
-  typingDiv.innerHTML = `
-  <span class="typing-indicator">
-    Stranger is typing
-    <span class="typing-dots">
-      <span></span><span></span><span></span>
-    </span>
-  </span>
-`;
+  if (typingDiv) {
+    typingDiv.innerHTML = `
+      <span class="typing-indicator">
+        Stranger is typing
+        <span class="typing-dots"><span></span><span></span><span></span></span>
+      </span>`;
+  }
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
-    typingDiv.innerText = "";
+    if (typingDiv) typingDiv.innerText = "";
   }, 1200);
 });
 
 socket.on("clearChat", () => {
-  messages.innerHTML = "";
+  if (messages) messages.innerHTML = "";
   cancelReply();
 });
 socket.on("reportSubmitted", () => {
@@ -719,18 +723,11 @@ socket.on("reportSubmitted", () => {
 socket.on("connect_error", (error) => {
   console.error("Socket connection error:", error);
   addSystem("⚠️ Connection issue. Attempting to reconnect...");
-  setTimeout(() => {
-    if (!socket.connected) {
-      addSystem("❌ Still disconnected. Try refreshing the page if problems persist.");
-    }
-  }, 3000);
 });
 
 socket.on("disconnect", (reason) => {
   if (reason === "io server disconnect") {
     addSystem("🔄 Server disconnected. Reconnecting...");
-  } else if (reason !== "io client namespace disconnect") {
-    console.warn("Socket disconnected:", reason);
   }
 });
 
@@ -740,6 +737,7 @@ function sanitizeText(value, maxLength = 300) {
 }
 
 function sendMsg() {
+  if (!msgInput) return;
   const text = msgInput.value.trim();
   if (!text) return;
   if (!room || !encryptionKey) {
@@ -749,15 +747,14 @@ function sendMsg() {
 
   const cleanText = sanitizeText(text);
   if (typeof CryptoJS === "undefined") {
-    alert("Chat encryption library did not load (check browser console / network). Try a hard refresh.");
+    alert("Encryption library error.");
     return;
   }
   let encryptedMsg;
   try {
     encryptedMsg = CryptoJS.AES.encrypt(cleanText, encryptionKey).toString();
   } catch (err) {
-    console.error(err);
-    alert("Could not encrypt your message. Try refreshing the page.");
+    alert("Encryption failed.");
     return;
   }
   const msgId = chatMode === "dm" ? generateMsgId() : null;
@@ -774,59 +771,54 @@ function sendMsg() {
 }
 
 function handleImageSelection() {
+  if (!imgInput) return;
   const file = imgInput.files[0];
   if (!file) return;
 
   const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
   if (!allowed.includes(file.type)) {
-    alert("Only JPG, PNG, WEBP, and GIF are allowed.");
+    alert("Invalid image type.");
     imgInput.value = "";
     return;
   }
 
   if (file.size > 5 * 1024 * 1024) {
-    alert("Image too large. Keep it under 5 MB.");
+    alert("File too large (max 5MB).");
     imgInput.value = "";
     return;
   }
 
   pendingImageFile = file;
-  imagePreviewTag.src = URL.createObjectURL(file);
-  imagePreviewName.innerText = `${file.name} • ${Math.round(file.size / 1024)} KB`;
-  imagePreview.classList.remove("hidden");
+  if (imagePreviewTag) imagePreviewTag.src = URL.createObjectURL(file);
+  if (imagePreviewName) imagePreviewName.innerText = `${file.name} • ${Math.round(file.size / 1024)} KB`;
+  if (imagePreview) imagePreview.classList.remove("hidden");
   syncComposerState();
 }
 
 function clearImagePreview() {
   pendingImageFile = null;
-  imagePreview.classList.add("hidden");
-  imagePreviewTag.src = "";
-  imagePreviewName.innerText = "";
-  imgInput.value = "";
+  if (imagePreview) imagePreview.classList.add("hidden");
+  if (imagePreviewTag) imagePreviewTag.src = "";
+  if (imagePreviewName) imagePreviewName.innerText = "";
+  if (imgInput) imgInput.value = "";
   syncComposerState();
 }
 
 function sendImage() {
   if (!pendingImageFile) return;
   if (!room || !encryptionKey) {
-    alert("Please start a chat or join a group first.");
+    alert("Not connected.");
     return;
   }
   const reader = new FileReader();
   reader.onload = function (e) {
-    if (typeof CryptoJS === "undefined") {
-      alert("Chat encryption library did not load. Try a hard refresh.");
-      return;
-    }
+    if (typeof CryptoJS === "undefined") return;
     const img = e.target.result;
     let encryptedImg;
     try {
       encryptedImg = CryptoJS.AES.encrypt(img, encryptionKey).toString();
-    } catch (err) {
-      console.error(err);
-      alert("Could not encrypt the image. Try refreshing the page.");
-      return;
-    }
+    } catch (err) { return; }
+    
     const imageId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const expiresIn = 10000;
     const msgId = chatMode === "dm" ? generateMsgId() : null;
@@ -850,23 +842,25 @@ function skip() {
     return;
   }
   if (!room) return;
-  messages.innerHTML = "";
+  if (messages) messages.innerHTML = "";
   cancelReply();
   clearImagePreview();
   syncComposerState();
   addSystem("🔎 Finding new stranger...");
-  searchState.classList.remove("hidden");
-  searchState.innerText = "Finding a new stranger...";
+  if (searchState) {
+    searchState.classList.remove("hidden");
+    searchState.innerText = "Finding a new stranger...";
+  }
   socket.emit("skip");
   room = null;
   encryptionKey = null;
   stopTimer();
-  matchQuality.innerText = "Searching";
+  if (matchQuality) matchQuality.innerText = "Searching";
   startSearchHints();
 }
 
 function reportUser() {
-  const reason = prompt("Report reason? Example: spam, harassment, abuse");
+  const reason = prompt("Report reason? (spam, harassment, abuse)");
   if (!reason) return;
   socket.emit("report", { reason });
 }
@@ -877,8 +871,9 @@ const emitTyping = throttle(() => {
   else socket.emit("typing");
 }, 450);
 
-msgInput.addEventListener("input", () => {
+msgInput?.addEventListener("input", () => {
   emitTyping();
+  syncComposerState();
 });
 
 function syncComposerState() {
@@ -888,26 +883,24 @@ function syncComposerState() {
   }
 }
 
-msgInput.addEventListener("keydown", (e) => {
+msgInput?.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendMsg();
   }
 });
 
-msgInput.addEventListener("input", syncComposerState);
-
 function setReply(messageText) {
   replyTo = messageText;
-  replyBox.classList.add("active");
-  replyText.innerText = `Replying to: ${messageText}`;
-  msgInput.focus();
+  if (replyBox) replyBox.classList.add("active");
+  if (replyText) replyText.innerText = `Replying to: ${messageText}`;
+  msgInput?.focus();
 }
 
 function cancelReply() {
   replyTo = null;
-  replyBox.classList.remove("active");
-  replyText.innerText = "";
+  if (replyBox) replyBox.classList.remove("active");
+  if (replyText) replyText.innerText = "";
 }
 
 function scrollDown(force = false) {
@@ -931,10 +924,7 @@ function startImageDestruct(container, expiresIn) {
   const interval = setInterval(() => {
     remaining -= 1;
     if (timerEl && remaining >= 0) timerEl.innerText = `Disappears in ${remaining}s`;
-    if (remaining <= 2 && imgEl) {
-      imgEl.style.filter = "blur(10px)";
-    }
-
+    if (remaining <= 2 && imgEl) imgEl.style.filter = "blur(10px)";
     if (remaining <= 0) {
       clearInterval(interval);
       if (imgEl) imgEl.remove();
@@ -956,6 +946,7 @@ function ticksMarkupForMe(pending) {
 }
 
 function addMe(text, reply = null, pending = false, msgId = null) {
+  if (!messages) return;
   const div = document.createElement("div");
   div.className = `message me${pending ? " pending" : ""}`;
   if (msgId) div.dataset.msgId = msgId;
@@ -967,8 +958,8 @@ function addMe(text, reply = null, pending = false, msgId = null) {
 }
 
 function addStranger(text, reply = null, senderLabel = null, inboundMsgId = null) {
-  const label =
-    senderLabel ? `<div class="msg-sender-label">${escapeHtml(senderLabel)}</div>` : "";
+  if (!messages) return;
+  const label = senderLabel ? `<div class="msg-sender-label">${escapeHtml(senderLabel)}</div>` : "";
   const div = document.createElement("div");
   div.className = "message stranger";
   div.innerHTML = `${label}${makeReplyHtml(reply)}<div class="message-text">${escapeHtml(text)}</div><div class="msg-meta"><span class="timestamp">${getTime()}</span></div>`;
@@ -980,6 +971,7 @@ function addStranger(text, reply = null, senderLabel = null, inboundMsgId = null
 }
 
 function addSystem(text) {
+  if (!messages) return;
   const div = document.createElement("div");
   div.className = "message system";
   div.innerText = text;
@@ -988,6 +980,7 @@ function addSystem(text) {
 }
 
 function addMyImage(src, reply = null, imageId = null, expiresIn = 10000, msgId = null) {
+  if (!messages) return;
   const div = document.createElement("div");
   div.className = chatMode === "dm" ? "message me pending" : "message me";
   if (imageId) div.dataset.imageId = imageId;
@@ -1001,11 +994,11 @@ function addMyImage(src, reply = null, imageId = null, expiresIn = 10000, msgId 
 }
 
 function addStrangerImage(src, reply = null, imageId = null, expiresIn = 10000, senderLabel = null, inboundMsgId = null) {
+  if (!messages) return;
   const div = document.createElement("div");
   div.className = "message stranger";
   if (imageId) div.dataset.imageId = imageId;
-  const label =
-    senderLabel ? `<div class="msg-sender-label">${escapeHtml(senderLabel)}</div>` : "";
+  const label = senderLabel ? `<div class="msg-sender-label">${escapeHtml(senderLabel)}</div>` : "";
   div.innerHTML = `${label}${makeReplyHtml(reply)}<img src="${src}" alt="image" class="protected-image" draggable="false"><div class="image-timer">Disappears in ${Math.floor(expiresIn / 1000)}s</div><div class="msg-meta"><span class="timestamp">${getTime()}</span></div>`;
   div.onclick = () => setReply("📷 Image");
   messages.appendChild(div);
@@ -1028,11 +1021,18 @@ document.addEventListener("dragstart", (e) => {
   if (e.target.classList.contains("protected-image")) e.preventDefault();
 });
 
+/**
+ * FIXED: Mobile Keyboard Adjustment
+ * Sets a CSS variable --vvh representing the actual visible height.
+ */
 if (window.visualViewport) {
   const syncViewportHeight = () => {
     document.documentElement.style.setProperty("--vvh", `${window.visualViewport.height}px`);
+    // Ensure chat stays at bottom when keyboard pops up
+    if (room) scrollDown(true);
   };
   window.visualViewport.addEventListener("resize", syncViewportHeight);
+  window.visualViewport.addEventListener("scroll", syncViewportHeight);
   syncViewportHeight();
 }
 
@@ -1076,17 +1076,18 @@ muteBtn?.addEventListener("click", () => {
   syncMuteUi();
 });
 
-startBtn.addEventListener("click", startChat);
-sendBtn.addEventListener("click", () => {
+// Event Listeners with safe checks
+startBtn?.addEventListener("click", startChat);
+sendBtn?.addEventListener("click", () => {
   if (pendingImageFile) sendImage();
   else sendMsg();
 });
-skipBtn.addEventListener("click", skip);
-reportBtn.addEventListener("click", reportUser);
-cancelReplyBtn.addEventListener("click", cancelReply);
-imgBtn.addEventListener("click", () => imgInput.click());
-cancelImageBtn.addEventListener("click", clearImagePreview);
-imgInput.addEventListener("change", handleImageSelection);
+skipBtn?.addEventListener("click", skip);
+reportBtn?.addEventListener("click", reportUser);
+cancelReplyBtn?.addEventListener("click", cancelReply);
+imgBtn?.addEventListener("click", () => imgInput?.click());
+cancelImageBtn?.addEventListener("click", clearImagePreview);
+imgInput?.addEventListener("change", handleImageSelection);
 
 if (groupCreateBtn) {
   groupCreateBtn.addEventListener("click", () => socket.emit("group:create"));
@@ -1095,10 +1096,7 @@ if (groupCreateBtn) {
 if (groupJoinBtn && groupJoinInput) {
   groupJoinBtn.addEventListener("click", () => {
     const code = groupJoinInput.value.trim();
-    if (!code) {
-      alert("Enter a group code.");
-      return;
-    }
+    if (!code) { alert("Enter a group code."); return; }
     socket.emit("group:join", { inviteCode: code });
   });
 }

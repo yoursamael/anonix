@@ -873,3 +873,55 @@ body.chat-route {
     padding: 11px 13px 9px;
   }
 }
+
+
+/* Mobile scroll fix */
+@media (max-width: 768px) {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body.chat-route {
+    overflow: hidden;
+    overscroll-behavior-y: none;
+  }
+
+  .chat-page,
+  #chatPageRoot,
+  .chat-page--conversation,
+  .chat-page--conversation .chat-main,
+  .chat-shell {
+    min-height: 100dvh !important;
+    height: 100dvh !important;
+    min-height: -webkit-fill-available !important;
+  }
+
+  .chat-page--conversation .chat-main,
+  .chat-shell {
+    min-height: 0 !important;
+  }
+
+  .chat-shell {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .chat-shell .messages-box {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    padding-bottom: 12px !important;
+  }
+
+  .chat-shell .chat-composer-wrap {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+  }
+}
