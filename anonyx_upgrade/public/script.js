@@ -76,6 +76,84 @@ if (window.AnonyxExperiments) {
   AnonyxExperiments.bootstrap(userId).catch(() => {});
 }
 
+function smartScroll(container, force = false) {
+  if (!container) return;
+  const distanceFromBottom =
+    container.scrollHeight - container.scrollTop - container.clientHeight;
+  const shouldStick = force || distanceFromBottom < 120;
+  if (shouldStick) {
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+  }
+}
+
+function throttle(fn, wait = 450) {
+  let last = 0;
+  let timeout = null;
+  return (...args) => {
+    const now = Date.now();
+    const remaining = wait - (now - last);
+    if (remaining <= 0) {
+      last = now;
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+      fn(...args);
+      return;
+    }
+    if (!timeout) {
+      timeout = setTimeout(() => {
+        last = Date.now();
+        timeout = null;
+        fn(...args);
+      }, remaining);
+    }
+  };
+}
+
+const searchHints = [
+  "Finding someone compatible…",
+  "Scanning active users…",
+  "Matching interests…",
+  "Looking for a better vibe…",
+  "Almost there…"
+];
+
+let searchHintTimer = null;
+
+function startSearchHints() {
+  let idx = 0;
+  clearInterval(searchHintTimer);
+  if (!searchState) return;
+  searchState.innerText = searchHints[0];
+  searchHintTimer = setInterval(() => {
+    if (!searchState.classList.contains("hidden")) {
+      idx = (idx + 1) % searchHints.length;
+      searchState.innerText = searchHints[idx];
+    }
+  }, 1800);
+}
+
+function stopSearchHints() {
+  clearInterval(searchHintTimer);
+  searchHintTimer = null;
+}
+
+function setSendLoading(loading) {
+  if (!sendBtn) return;
+  sendBtn.classList.toggle("loading", !!loading);
+  sendBtn.disabled = !!loading;
+}
+
+function updateSessionEnergy() {
+  if (!messages || !matchQuality || chatMode !== "dm" || !room) return;
+  const total = messages.querySelectorAll(".message.me, .message.stranger").length;
+  if (total >= 20) matchQuality.innerText = "Strong vibe";
+  else if (total >= 10) matchQuality.innerText = "Good flow";
+  else if (total >= 4) matchQuality.innerText = "Warm";
+  else matchQuality.innerText = "New match";
+}
+
 function readReceiptsOn() {
   return localStorage.getItem("anonyx_read_receipts") !== "0";
 }
@@ -237,12 +315,14 @@ if (urlGroup && groupJoinInput) {
 }
 
 syncMuteUi();
+syncComposerState();
 
 socket.on("session:sync", (s) => {
   if (!s) return;
   if (s.mode === "idle") {
     if (room || encryptionKey || groupRoomId) {
       const wasOpen = chatSection && !chatSection.classList.contains("hidden");
+      stopSearchHints();
       resetGroupClientState();
       if (wasOpen) {
         setupSection.classList.remove("hidden");
@@ -302,6 +382,7 @@ function resetGroupClientState() {
 }
 
 function openGroupShell(subtitle, codeForTitle) {
+  stopSearchHints();
   chatMode = "group";
   setupSection.classList.add("hidden");
   chatSection.classList.remove("hidden");
@@ -322,12 +403,14 @@ function openGroupShell(subtitle, codeForTitle) {
 }
 
 function leaveGroupChat() {
+  stopSearchHints();
   socket.emit("group:leave");
   resetGroupClientState();
   setupSection.classList.remove("hidden");
   chatSection.classList.add("hidden");
   messages.innerHTML = "";
   matchQuality.innerText = "Ready";
+  syncComposerState();
   setConversationMode(false);
 }
 
@@ -353,6 +436,7 @@ function startChat() {
   matchQuality.innerText = "Searching";
   setChatHeaderTitle("Matching", "Looking for someone…");
   setConversationMode(true);
+  startSearchHints();
   addSystem("🔎 Looking for stranger...");
 }
 
@@ -410,6 +494,7 @@ socket.on("searching", () => {
   stopTimer();
   matchQuality.innerText = "Searching";
   searchState.classList.remove("hidden");
+  startSearchHints();
 });
 
 socket.on("tabLimitExceeded", (msg) => {
@@ -425,6 +510,7 @@ socket.on("matched", (data) => {
   cancelReply();
   stopTimer();
   startTimer();
+  stopSearchHints();
   searchState.classList.add("hidden");
   matchQuality.innerText = "Matched";
   setChatHeaderTitle("Stranger", "Connected. Be respectful and use report if needed.");
@@ -434,6 +520,10 @@ socket.on("matched", (data) => {
   if (skipBtn) skipBtn.classList.remove("hidden");
   if (reportBtn) reportBtn.classList.remove("hidden");
   addSystem("💞 Connected with stranger! 💞");
+  if (navigator.vibrate) {
+    try { navigator.vibrate(120); } catch (_) {}
+  }
+  msgInput?.focus();
 
   const popup = document.getElementById("matchPopup");
   if (popup) {
@@ -446,6 +536,7 @@ socket.on("system", (msg) => {
   addSystem(msg);
   if (/Searching|Waiting/i.test(msg)) {
     searchState.classList.remove("hidden");
+    startSearchHints();
     stopTimer();
   }
 });
@@ -459,7 +550,7 @@ function findMeMessageByMsgId(mid) {
 }
 
 socket.on("messageAck", (payload) => {
-  sendBtn.classList.remove("loading");
+  setSendLoading(false);
   const mid = payload && payload.msgId;
   let el = mid ? findMeMessageByMsgId(mid) : null;
   if (!el) {
@@ -543,7 +634,7 @@ socket.on("group:message", (data) => {
 socket.on("group:messageAck", () => {
   const pending = document.querySelector(".message.pending");
   if (pending) pending.classList.remove("pending");
-  sendBtn.classList.remove("loading");
+  setSendLoading(false);
 });
 
 socket.on("group:typing", () => {
@@ -568,6 +659,7 @@ socket.on("group:shutdown", () => {
   chatSection.classList.add("hidden");
   messages.innerHTML = "";
   matchQuality.innerText = "Ready";
+  syncComposerState();
   setConversationMode(false);
 });
 
@@ -582,16 +674,16 @@ socket.on("message", (data) => {
       const decryptedImg = CryptoJS.AES.decrypt(data.img, encryptionKey || room).toString(CryptoJS.enc.Utf8);
       addStrangerImage(decryptedImg, data.replyTo || null, data.imageId || null, data.expiresIn || 10000, null, data.msgId);
     } catch (e) {
-      console.error('Image decryption failed', e);
-      addStrangerImage('', data.replyTo || null, data.imageId || null, data.expiresIn || 10000, null, data.msgId);
+      console.error("Image decryption failed", e);
+      addStrangerImage("", data.replyTo || null, data.imageId || null, data.expiresIn || 10000, null, data.msgId);
     }
   } else {
     try {
       const decryptedMsg = CryptoJS.AES.decrypt(data.msg, encryptionKey || room).toString(CryptoJS.enc.Utf8);
       addStranger(decryptedMsg, data.replyTo || null, null, data.msgId);
     } catch (e) {
-      console.error('Message decryption failed', e);
-      addStranger('Error: Could not decrypt message', data.replyTo || null, null, data.msgId);
+      console.error("Message decryption failed", e);
+      addStranger("Error: Could not decrypt message", data.replyTo || null, null, data.msgId);
     }
   }
   typingDiv.innerText = "";
@@ -643,7 +735,7 @@ socket.on("disconnect", (reason) => {
 });
 
 function sanitizeText(value, maxLength = 300) {
-  if (typeof value !== 'string') return '';
+  if (typeof value !== "string") return "";
   return value.trim().slice(0, maxLength);
 }
 
@@ -651,7 +743,7 @@ function sendMsg() {
   const text = msgInput.value.trim();
   if (!text) return;
   if (!room || !encryptionKey) {
-    alert('Please start a chat or join a group first.');
+    alert("Please start a chat or join a group first.");
     return;
   }
 
@@ -675,8 +767,9 @@ function sendMsg() {
     socket.emit("message", { msg: encryptedMsg, replyTo, msgId });
   }
   addMe(cleanText, replyTo, true, msgId);
-  sendBtn.classList.add('loading');
+  setSendLoading(true);
   msgInput.value = "";
+  syncComposerState();
   cancelReply();
 }
 
@@ -701,6 +794,7 @@ function handleImageSelection() {
   imagePreviewTag.src = URL.createObjectURL(file);
   imagePreviewName.innerText = `${file.name} • ${Math.round(file.size / 1024)} KB`;
   imagePreview.classList.remove("hidden");
+  syncComposerState();
 }
 
 function clearImagePreview() {
@@ -709,12 +803,13 @@ function clearImagePreview() {
   imagePreviewTag.src = "";
   imagePreviewName.innerText = "";
   imgInput.value = "";
+  syncComposerState();
 }
 
 function sendImage() {
   if (!pendingImageFile) return;
   if (!room || !encryptionKey) {
-    alert('Please start a chat or join a group first.');
+    alert("Please start a chat or join a group first.");
     return;
   }
   const reader = new FileReader();
@@ -742,7 +837,7 @@ function sendImage() {
       socket.emit("message", { img: encryptedImg, replyTo, imageId, expiresIn, msgId });
     }
     addMyImage(img, replyTo, imageId, expiresIn, msgId);
-    sendBtn.classList.add('loading');
+    setSendLoading(true);
     cancelReply();
     clearImagePreview();
   };
@@ -758,6 +853,7 @@ function skip() {
   messages.innerHTML = "";
   cancelReply();
   clearImagePreview();
+  syncComposerState();
   addSystem("🔎 Finding new stranger...");
   searchState.classList.remove("hidden");
   searchState.innerText = "Finding a new stranger...";
@@ -766,6 +862,7 @@ function skip() {
   encryptionKey = null;
   stopTimer();
   matchQuality.innerText = "Searching";
+  startSearchHints();
 }
 
 function reportUser() {
@@ -774,11 +871,22 @@ function reportUser() {
   socket.emit("report", { reason });
 }
 
-msgInput.addEventListener("input", () => {
+const emitTyping = throttle(() => {
   if (!room) return;
   if (chatMode === "group") socket.emit("group:typing");
   else socket.emit("typing");
+}, 450);
+
+msgInput.addEventListener("input", () => {
+  emitTyping();
 });
+
+function syncComposerState() {
+  if (!sendBtn || !msgInput) return;
+  if (!sendBtn.classList.contains("loading")) {
+    sendBtn.disabled = !msgInput.value.trim() && !pendingImageFile;
+  }
+}
 
 msgInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -786,6 +894,8 @@ msgInput.addEventListener("keydown", (e) => {
     sendMsg();
   }
 });
+
+msgInput.addEventListener("input", syncComposerState);
 
 function setReply(messageText) {
   replyTo = messageText;
@@ -800,8 +910,8 @@ function cancelReply() {
   replyText.innerText = "";
 }
 
-function scrollDown() {
-  messages.scrollTo({ top: messages.scrollHeight, behavior: "smooth" });
+function scrollDown(force = false) {
+  smartScroll(messages, force);
 }
 
 function getTime() {
@@ -853,12 +963,12 @@ function addMe(text, reply = null, pending = false, msgId = null) {
   div.onclick = () => setReply(text);
   messages.appendChild(div);
   scrollDown();
+  updateSessionEnergy();
 }
 
 function addStranger(text, reply = null, senderLabel = null, inboundMsgId = null) {
-  const label = senderLabel
-    ? `<div class="msg-sender-label">${escapeHtml(senderLabel)}</div>`
-    : "";
+  const label =
+    senderLabel ? `<div class="msg-sender-label">${escapeHtml(senderLabel)}</div>` : "";
   const div = document.createElement("div");
   div.className = "message stranger";
   div.innerHTML = `${label}${makeReplyHtml(reply)}<div class="message-text">${escapeHtml(text)}</div><div class="msg-meta"><span class="timestamp">${getTime()}</span></div>`;
@@ -866,6 +976,7 @@ function addStranger(text, reply = null, senderLabel = null, inboundMsgId = null
   messages.appendChild(div);
   scrollDown();
   maybeAckInboundDm(inboundMsgId);
+  updateSessionEnergy();
 }
 
 function addSystem(text) {
@@ -893,15 +1004,15 @@ function addStrangerImage(src, reply = null, imageId = null, expiresIn = 10000, 
   const div = document.createElement("div");
   div.className = "message stranger";
   if (imageId) div.dataset.imageId = imageId;
-  const label = senderLabel
-    ? `<div class="msg-sender-label">${escapeHtml(senderLabel)}</div>`
-    : "";
+  const label =
+    senderLabel ? `<div class="msg-sender-label">${escapeHtml(senderLabel)}</div>` : "";
   div.innerHTML = `${label}${makeReplyHtml(reply)}<img src="${src}" alt="image" class="protected-image" draggable="false"><div class="image-timer">Disappears in ${Math.floor(expiresIn / 1000)}s</div><div class="msg-meta"><span class="timestamp">${getTime()}</span></div>`;
   div.onclick = () => setReply("📷 Image");
   messages.appendChild(div);
   scrollDown();
   startImageDestruct(div, expiresIn);
   maybeAckInboundDm(inboundMsgId);
+  updateSessionEnergy();
 }
 
 function escapeHtml(text) {
@@ -917,32 +1028,58 @@ document.addEventListener("dragstart", (e) => {
   if (e.target.classList.contains("protected-image")) e.preventDefault();
 });
 
+if (window.visualViewport) {
+  const syncViewportHeight = () => {
+    document.documentElement.style.setProperty("--vvh", `${window.visualViewport.height}px`);
+  };
+  window.visualViewport.addEventListener("resize", syncViewportHeight);
+  syncViewportHeight();
+}
+
+let swipeStartX = 0;
+messages?.addEventListener("touchstart", (e) => {
+  swipeStartX = e.changedTouches[0].screenX;
+}, { passive: true });
+
+messages?.addEventListener("touchend", (e) => {
+  const delta = e.changedTouches[0].screenX - swipeStartX;
+  if (Math.abs(delta) > 120 && chatMode === "dm" && room) {
+    skip();
+  }
+}, { passive: true });
+
 themeToggle?.addEventListener("click", () => {
   document.body.classList.toggle("compact");
 });
+
 themeSelect?.addEventListener("change", (e) => {
   document.body.setAttribute("data-theme", e.target.value);
   localStorage.setItem("theme", e.target.value);
   if (themeSelectDrawer) themeSelectDrawer.value = e.target.value;
 });
+
 const savedTheme = localStorage.getItem("theme") || "default";
 document.body.setAttribute("data-theme", savedTheme);
 if (themeSelect) themeSelect.value = savedTheme;
 if (themeSelectDrawer) themeSelectDrawer.value = savedTheme;
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
-    .then(reg => console.log('Service Worker registered'))
-    .catch(err => console.log('SW registration failed', err));
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/sw.js")
+    .then(() => console.log("Service Worker registered"))
+    .catch((err) => console.log("SW registration failed", err));
 }
+
 muteBtn?.addEventListener("click", () => {
   isMuted = !isMuted;
   sessionStorage.setItem("anonyx_sounds_muted", isMuted ? "1" : "0");
   syncMuteUi();
 });
+
 startBtn.addEventListener("click", startChat);
 sendBtn.addEventListener("click", () => {
-  if (pendingImageFile) sendImage(); else sendMsg();
+  if (pendingImageFile) sendImage();
+  else sendMsg();
 });
 skipBtn.addEventListener("click", skip);
 reportBtn.addEventListener("click", reportUser);
@@ -954,6 +1091,7 @@ imgInput.addEventListener("change", handleImageSelection);
 if (groupCreateBtn) {
   groupCreateBtn.addEventListener("click", () => socket.emit("group:create"));
 }
+
 if (groupJoinBtn && groupJoinInput) {
   groupJoinBtn.addEventListener("click", () => {
     const code = groupJoinInput.value.trim();
@@ -964,6 +1102,7 @@ if (groupJoinBtn && groupJoinInput) {
     socket.emit("group:join", { inviteCode: code });
   });
 }
+
 if (leaveGroupBtn) {
   leaveGroupBtn.addEventListener("click", () => leaveGroupChat());
 }
