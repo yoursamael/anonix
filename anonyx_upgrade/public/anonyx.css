@@ -319,3 +319,57 @@ html[data-ab-hero-cta="emphasis"] .nav-cta {
 html[data-ab-chat-header="minimal"] .chat-topbar #chatHint {
   display: none;
 }
+
+/* =======================
+   UI UPGRADE OVERRIDES
+   ======================= */
+
+.chat-page {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(124,92,255,0.16), transparent 22%),
+    radial-gradient(circle at 100% 10%, rgba(41,211,145,0.08), transparent 18%);
+}
+
+.chat-header {
+  background: rgba(7, 11, 22, 0.78);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+}
+
+.setup-card,
+.chat-card {
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.045));
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 24px 60px rgba(0,0,0,.24);
+}
+
+.setup-card {
+  border-radius: 28px;
+}
+
+.setup-top h1 {
+  letter-spacing: -0.04em;
+}
+
+.setup-top p {
+  color: #c5cde4;
+}
+
+.form-group select,
+.form-group input {
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+}
+
+.setup-actions .btn,
+.topbar-actions .btn,
+.topbar-actions .pill {
+  min-height: 44px;
+  border-radius: 14px;
+}
+
+.search-state {
+  box-shadow: 0 12px 30px rgba(0,0,0,.16);
+}
+
+.messages-box {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+}
