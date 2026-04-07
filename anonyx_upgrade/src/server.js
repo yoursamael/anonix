@@ -103,16 +103,11 @@ async function connectDatabase() {
     await mongoose.connect(config.mongodb, dbOptions);
     console.log("✅ Successfully connected to MongoDB Atlas");
   } catch (err) {
-    console.error("❌ MongoDB Connection Error:");
-    console.error("message:", err.message);
-    console.error("name:", err.name);
-    if (err.code) console.error("code:", err.code);
-    if (err.reason) console.error("reason:", err.reason);
+    console.error("❌ MongoDB Connection Error:", err.message);
     console.error(err);
     process.exit(1);
   }
 }
-
 async function bootstrap() {
   assertRuntimeEnv();
   await connectDatabase();
