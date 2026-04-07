@@ -15,7 +15,7 @@
 body.chat-route {
   font-family: var(--app-font);
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
   background:
     radial-gradient(circle at top left, rgba(124, 92, 255, 0.16), transparent 24%),
     radial-gradient(circle at top right, rgba(41, 211, 145, 0.09), transparent 18%),
@@ -286,7 +286,6 @@ body.chat-route {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Reaction Badge Styling */
 .msg-reaction-badge {
   position: absolute;
   bottom: -12px;
@@ -538,27 +537,19 @@ body.chat-route {
 @media (max-width: 768px) {
   html,
   body {
-    height: 100%;
+    height: auto;
+    overflow-y: auto;
   }
 
   body.chat-route {
+    overscroll-behavior-y: auto;
+  }
+
+  .chat-page--conversation,
+  .chat-page--conversation body {
+    height: 100%;
     overflow: hidden;
     overscroll-behavior-y: none;
-  }
-
-  .chat-page,
-  #chatPageRoot,
-  .chat-page--conversation,
-  .chat-page--conversation .chat-main,
-  .chat-shell {
-    min-height: 100dvh !important;
-    height: 100dvh !important;
-    min-height: -webkit-fill-available !important;
-  }
-
-  .chat-page--conversation .chat-main,
-  .chat-shell {
-    min-height: 0 !important;
   }
 
   .chat-shell {
