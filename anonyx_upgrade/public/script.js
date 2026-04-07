@@ -519,7 +519,7 @@ socket.on("matched", (data) => {
   if (leaveGroupBtnDrawer) leaveGroupBtnDrawer.classList.add("hidden");
   if (skipBtn) skipBtn.classList.remove("hidden");
   if (reportBtn) reportBtn.classList.remove("hidden");
-  addSystem("💞 Connected with stranger! 💞");
+  addSystem("💞 Connected with someone special! 💞");
   if (navigator.vibrate) {
     try { navigator.vibrate(120); } catch (_) {}
   }

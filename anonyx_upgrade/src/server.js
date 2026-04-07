@@ -746,7 +746,7 @@ async function bootstrap() {
       trackEvent("matches");
       socket.emit("matched", { partnerLogo: "💞" });
       bestPartner.emit("matched", { partnerLogo: "💞" });
-      io.to(room).emit("system", "Connected with a stranger!");
+      io.to(room).emit("system", "Say hii ...💞 ");
     } else {
       console.log(`[Matching] Entering queue: ${socket.userId}`);
       store.waiting.push(socket);
