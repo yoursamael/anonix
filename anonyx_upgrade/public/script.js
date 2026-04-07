@@ -1,8 +1,3 @@
-/**
- * Production-level Real-time Anonymous Chat Script
- * Refactored for stability, mobile UX, and removed obsolete fields.
- */
-
 let userId = sessionStorage.getItem("anonyx_sid");
 if (!userId) {
   userId = localStorage.getItem("anonyx_user") || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `u_${Date.now()}`);
@@ -26,7 +21,6 @@ let groupOwnerUserId = null;
 let groupInviteLocked = true;
 let lastReadAllSent = 0;
 
-// Safe element retriever helper
 const getEl = (id) => document.getElementById(id);
 
 const chatPageRoot = getEl("chatPageRoot");
@@ -47,7 +41,6 @@ const muteBtnDrawer = getEl("muteBtnDrawer");
 const reportBtnDrawer = getEl("reportBtnDrawer");
 const skipBtnDrawer = getEl("skipBtnDrawer");
 const leaveGroupBtnDrawer = getEl("leaveGroupBtnDrawer");
-
 const messages = getEl("messages");
 const typingDiv = getEl("typing");
 const replyBox = getEl("replyBox");
@@ -71,7 +64,6 @@ const leaveGroupBtn = getEl("leaveGroupBtn");
 const groupCreateBtn = getEl("groupCreateBtn");
 const groupJoinBtn = getEl("groupJoinBtn");
 const groupJoinInput = getEl("groupJoinInput");
-
 const startBtn = getEl("startBtn");
 const sendBtn = getEl("sendBtn");
 const skipBtn = getEl("skipBtn");
@@ -84,10 +76,46 @@ if (window.AnonyxExperiments) {
   AnonyxExperiments.bootstrap(userId).catch(() => {});
 }
 
-/**
- * FIXED: Enhanced smartScroll for mobile.
- * Uses a small timeout to ensure the DOM has updated before calculating height.
- */
+function cleanupOldMessages() {
+  if (!messages) return;
+  const allMessages = messages.querySelectorAll('.message');
+  if (allMessages.length > 200) {
+    for (let i = 0; i < 50; i++) {
+      allMessages[i].remove();
+    }
+    addSystem("Note: Older messages cleared for performance.");
+  }
+}
+
+function attachReactionListener(div, msgId) {
+  let lastClick = 0;
+  div.addEventListener('click', () => {
+    const now = Date.now();
+    if (now - lastClick < 300 && msgId && room) {
+      socket.emit("message:reaction", { msgId, reaction: "❤️" });
+      applyReactionUI(div, "❤️");
+    }
+    lastClick = now;
+  });
+}
+
+function applyReactionUI(el, emoji) {
+  let reactBox = el.querySelector('.msg-reaction-badge');
+  if (!reactBox) {
+    reactBox = document.createElement('span');
+    reactBox.className = 'msg-reaction-badge';
+    el.appendChild(reactBox);
+  }
+  reactBox.innerText = emoji;
+  if (navigator.vibrate) navigator.vibrate(12);
+}
+
+function requestPushPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
 function smartScroll(container, force = false) {
   if (!container) return;
   const scroll = () => {
@@ -97,7 +125,6 @@ function smartScroll(container, force = false) {
       container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
     }
   };
-  // Use timeout to allow mobile keyboard layout shifts to complete
   setTimeout(scroll, 50);
 }
 
@@ -420,22 +447,14 @@ function leaveGroupChat() {
   setConversationMode(false);
 }
 
-/**
- * FIXED: Removed language and interests dependencies.
- * Uses safe value retrieval for gender and preference.
- */
 function startChat() {
+  requestPushPermission();
   const gender = getEl("gender")?.value || "unspecified";
-  const preference = getEl("preference")?.value || "all";
-
-  // Language and interests removed from HTML, safely passing defaults
+  const preference = getEl("preference")?.value || "both";
   const language = "en";
   const interests = [];
-
-  console.log("Emitting start with:", { gender, preference });
   resetGroupClientState();
   socket.emit("start", { gender, preference, language, interests });
-
   if (setupSection) setupSection.classList.add("hidden");
   if (chatSection) chatSection.classList.remove("hidden");
   if (messages) messages.innerHTML = "";
@@ -510,6 +529,12 @@ socket.on("tabLimitExceeded", (msg) => {
 });
 
 socket.on("matched", (data) => {
+  if (document.visibilityState === "hidden") {
+    new Notification("New Match! 💬", {
+      body: "Someone is waiting to chat with you.",
+      icon: "/favicon.svg"
+    });
+  }
   chatMode = "dm";
   groupRoomId = null;
   room = true;
@@ -532,7 +557,6 @@ socket.on("matched", (data) => {
     try { navigator.vibrate(120); } catch (_) {}
   }
   msgInput?.focus();
-
   const popup = getEl("matchPopup");
   if (popup) {
     popup.classList.add("show");
@@ -588,6 +612,11 @@ socket.on("dm:receipt", (p) => {
   }
 });
 
+socket.on("message:reaction", ({ msgId, reaction }) => {
+  const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+  if (el) applyReactionUI(el, reaction);
+});
+
 socket.on("group:created", (payload) => {
   if (!payload || !payload.roomId) return;
   groupRoomId = payload.roomId;
@@ -626,7 +655,6 @@ socket.on("group:message", (data) => {
       const decryptedImg = CryptoJS.AES.decrypt(data.img, encryptionKey).toString(CryptoJS.enc.Utf8);
       addStrangerImage(decryptedImg, data.replyTo || null, data.imageId || null, data.expiresIn || 10000, who);
     } catch (e) {
-      console.error("Group image decrypt failed", e);
       addStrangerImage("", data.replyTo || null, data.imageId || null, data.expiresIn || 10000, who);
     }
   } else {
@@ -649,11 +677,7 @@ socket.on("group:messageAck", () => {
 
 socket.on("group:typing", () => {
   if (typingDiv) {
-    typingDiv.innerHTML = `
-      <span class="typing-indicator">
-        Someone is typing
-        <span class="typing-dots"><span></span><span></span><span></span></span>
-      </span>`;
+    typingDiv.innerHTML = `<span class="typing-indicator">Someone is typing<span class="typing-dots"><span></span><span></span><span></span></span></span>`;
   }
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
@@ -674,22 +698,19 @@ socket.on("group:shutdown", () => {
 
 socket.on("message", (data) => {
   if (chatMode === "group") return;
+  const key = encryptionKey || room;
   if (data.img) {
     try {
-      const key = encryptionKey || room;
       const decryptedImg = CryptoJS.AES.decrypt(data.img, key).toString(CryptoJS.enc.Utf8);
       addStrangerImage(decryptedImg, data.replyTo || null, data.imageId || null, data.expiresIn || 10000, null, data.msgId);
     } catch (e) {
-      console.error("Image decryption failed", e);
       addStrangerImage("", data.replyTo || null, data.imageId || null, data.expiresIn || 10000, null, data.msgId);
     }
   } else {
     try {
-      const key = encryptionKey || room;
       const decryptedMsg = CryptoJS.AES.decrypt(data.msg, key).toString(CryptoJS.enc.Utf8);
       addStranger(decryptedMsg, data.replyTo || null, null, data.msgId);
     } catch (e) {
-      console.error("Message decryption failed", e);
       addStranger("Error: Could not decrypt message", data.replyTo || null, null, data.msgId);
     }
   }
@@ -700,11 +721,7 @@ socket.on("message", (data) => {
 
 socket.on("typing", () => {
   if (typingDiv) {
-    typingDiv.innerHTML = `
-      <span class="typing-indicator">
-        Stranger is typing
-        <span class="typing-dots"><span></span><span></span><span></span></span>
-      </span>`;
+    typingDiv.innerHTML = `<span class="typing-indicator">Stranger is typing<span class="typing-dots"><span></span><span></span><span></span></span></span>`;
   }
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
@@ -721,7 +738,6 @@ socket.on("reportSubmitted", () => {
 });
 
 socket.on("connect_error", (error) => {
-  console.error("Socket connection error:", error);
   addSystem("⚠️ Connection issue. Attempting to reconnect...");
 });
 
@@ -744,7 +760,6 @@ function sendMsg() {
     alert("Please start a chat or join a group first.");
     return;
   }
-
   const cleanText = sanitizeText(text);
   if (typeof CryptoJS === "undefined") {
     alert("Encryption library error.");
@@ -774,20 +789,17 @@ function handleImageSelection() {
   if (!imgInput) return;
   const file = imgInput.files[0];
   if (!file) return;
-
   const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
   if (!allowed.includes(file.type)) {
     alert("Invalid image type.");
     imgInput.value = "";
     return;
   }
-
   if (file.size > 5 * 1024 * 1024) {
     alert("File too large (max 5MB).");
     imgInput.value = "";
     return;
   }
-
   pendingImageFile = file;
   if (imagePreviewTag) imagePreviewTag.src = URL.createObjectURL(file);
   if (imagePreviewName) imagePreviewName.innerText = `${file.name} • ${Math.round(file.size / 1024)} KB`;
@@ -818,11 +830,9 @@ function sendImage() {
     try {
       encryptedImg = CryptoJS.AES.encrypt(img, encryptionKey).toString();
     } catch (err) { return; }
-    
     const imageId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const expiresIn = 10000;
     const msgId = chatMode === "dm" ? generateMsgId() : null;
-
     if (chatMode === "group") {
       socket.emit("group:message", { img: encryptedImg, replyTo, imageId, expiresIn });
     } else {
@@ -946,11 +956,13 @@ function ticksMarkupForMe(pending) {
 }
 
 function addMe(text, reply = null, pending = false, msgId = null) {
+  cleanupOldMessages();
   if (!messages) return;
   const div = document.createElement("div");
   div.className = `message me${pending ? " pending" : ""}`;
   if (msgId) div.dataset.msgId = msgId;
   div.innerHTML = `${makeReplyHtml(reply)}<div class="message-text">${escapeHtml(text)}</div><div class="msg-meta"><span class="timestamp">${getTime()}</span>${ticksMarkupForMe(pending)}</div>`;
+  attachReactionListener(div, msgId);
   div.onclick = () => setReply(text);
   messages.appendChild(div);
   scrollDown();
@@ -958,11 +970,14 @@ function addMe(text, reply = null, pending = false, msgId = null) {
 }
 
 function addStranger(text, reply = null, senderLabel = null, inboundMsgId = null) {
+  cleanupOldMessages();
   if (!messages) return;
   const label = senderLabel ? `<div class="msg-sender-label">${escapeHtml(senderLabel)}</div>` : "";
   const div = document.createElement("div");
   div.className = "message stranger";
+  if (inboundMsgId) div.dataset.msgId = inboundMsgId;
   div.innerHTML = `${label}${makeReplyHtml(reply)}<div class="message-text">${escapeHtml(text)}</div><div class="msg-meta"><span class="timestamp">${getTime()}</span></div>`;
+  attachReactionListener(div, inboundMsgId);
   div.onclick = () => setReply(text);
   messages.appendChild(div);
   scrollDown();
@@ -1021,14 +1036,9 @@ document.addEventListener("dragstart", (e) => {
   if (e.target.classList.contains("protected-image")) e.preventDefault();
 });
 
-/**
- * FIXED: Mobile Keyboard Adjustment
- * Sets a CSS variable --vvh representing the actual visible height.
- */
 if (window.visualViewport) {
   const syncViewportHeight = () => {
     document.documentElement.style.setProperty("--vvh", `${window.visualViewport.height}px`);
-    // Ensure chat stays at bottom when keyboard pops up
     if (room) scrollDown(true);
   };
   window.visualViewport.addEventListener("resize", syncViewportHeight);
@@ -1064,10 +1074,7 @@ if (themeSelect) themeSelect.value = savedTheme;
 if (themeSelectDrawer) themeSelectDrawer.value = savedTheme;
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .register("/sw.js")
-    .then(() => console.log("Service Worker registered"))
-    .catch((err) => console.log("SW registration failed", err));
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
 }
 
 muteBtn?.addEventListener("click", () => {
@@ -1076,7 +1083,6 @@ muteBtn?.addEventListener("click", () => {
   syncMuteUi();
 });
 
-// Event Listeners with safe checks
 startBtn?.addEventListener("click", startChat);
 sendBtn?.addEventListener("click", () => {
   if (pendingImageFile) sendImage();
@@ -1092,7 +1098,6 @@ imgInput?.addEventListener("change", handleImageSelection);
 if (groupCreateBtn) {
   groupCreateBtn.addEventListener("click", () => socket.emit("group:create"));
 }
-
 if (groupJoinBtn && groupJoinInput) {
   groupJoinBtn.addEventListener("click", () => {
     const code = groupJoinInput.value.trim();
@@ -1100,7 +1105,6 @@ if (groupJoinBtn && groupJoinInput) {
     socket.emit("group:join", { inviteCode: code });
   });
 }
-
 if (leaveGroupBtn) {
   leaveGroupBtn.addEventListener("click", () => leaveGroupChat());
 }
