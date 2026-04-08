@@ -114,8 +114,11 @@
   max-width: 78%; padding: 12px 14px; border-radius: 16px; line-height: 1.5; overflow-wrap: break-word;
   font-size: .96rem; position: relative; animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
-.message.me { align-self: flex-end; background: linear-gradient(135deg, rgba(124,92,255,.28), rgba(124,92,255,.16)); border: 1px solid rgba(124,92,255,.24); color: #fff; border-bottom-right-radius: 8px; }
-.message.stranger { align-self: flex-start; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.06); color: #fff; border-bottom-left-radius: 8px; }
+.message.me {
+  background: linear-gradient(135deg, rgba(247, 231, 206, 0.2), rgba(247, 231, 206, 0.1));
+  border: 1px solid rgba(247, 231, 206, 0.3);
+  color: #F7E7CE;
+}.message.stranger { align-self: flex-start; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.06); color: #fff; border-bottom-left-radius: 8px; }
 .message.system { align-self: center; max-width: 100%; background: rgba(255,255,255,.03); color: #c7cde3; font-style: italic; text-align: center; padding: 8px 14px; border: 1px dashed rgba(255,255,255,.08); }
 .message.pending { opacity: .72; }
 .message img { display: block; max-width: 240px; width: 100%; border-radius: 12px; margin-top: 8px; transition: filter 0.3s ease; }

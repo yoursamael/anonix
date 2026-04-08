@@ -1,30 +1,34 @@
 :root {
-  --bg: #060816;
-  --bg-2: #0b1124;
-  --bg-3: #101935;
-  --panel: rgba(255, 255, 255, 0.06);
-  --panel-strong: rgba(255, 255, 255, 0.1);
-  --border: rgba(255, 255, 255, 0.1);
-  --text: #f5f7ff;
-  --text-secondary: #e0e7ff;
-  --muted: #aab4d3;
-  --muted-strong: #8a95b3;
-  --primary: #7c5cff;
-  --primary-hover: #6a49f0;
-  --primary-dark: #5a3ce5;
-  --accent: #29d391;
-  --accent-hover: #1ba875;
-  --danger: #ff6b81;
-  --warning: #ffa040;
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
-  --radius-xl: 28px;
-  --radius-lg: 20px;
-  --radius-md: 16px;
-  --radius-sm: 12px;
-  --container: 1180px;
-  --skeleton: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
-  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Core Colors */
+  --bg: #0A1A17;              /* Slightly darker forest for depth */
+  --bg-2: #102C26;            /* Deep Forest */
+  --bg-3: #1B443B;            /* Lighter forest for panels */
+  
+  --panel: rgba(247, 231, 206, 0.05);  /* Champagne-tinted glass */
+  --panel-strong: rgba(247, 231, 206, 0.1);
+  --border: rgba(247, 231, 206, 0.15);
+  
+  /* Text & Accents */
+  --text: #F7E7CE;            /* Champagne Primary Text */
+  --text-secondary: #E5D1B3;  /* Muted Champagne */
+  --muted: #8FA49F;           /* Desaturated Forest Sage */
+  --muted-strong: #6D857F;
+  
+  /* Brand Colors */
+  --primary: #F7E7CE;         /* Champagne as the primary "pop" */
+  --primary-hover: #EBD6B5;
+  --primary-dark: #D4B991;
+  
+  --accent: #2D6356;          /* Bright Forest for UI highlights */
+  --accent-hover: #3D7A6C;
+  
+  /* Functional Colors */
+  --danger: #E67E7E;
+  --warning: #F0B27A;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  
+  /* Gradients */
+  --skeleton: linear-gradient(90deg, rgba(16, 44, 38, 0.5) 25%, rgba(247, 231, 206, 0.1) 50%, rgba(16, 44, 38, 0.5) 75%);
 }
 
 @keyframes shimmer {
