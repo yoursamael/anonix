@@ -1,46 +1,9 @@
 /* Mobile-first “app” shell — Telegram / WhatsApp–like chat layout */
 
-:root {
-  /* Core Colors */
-  --bg: #0A1A17;              /* Slightly darker forest for depth */
-  --bg-2: #102C26;            /* Deep Forest */
-  --bg-3: #1B443B;            /* Lighter forest for panels */
-  
-  --panel: rgba(247, 231, 206, 0.05);  /* Champagne-tinted glass */
-  --panel-strong: rgba(247, 231, 206, 0.1);
-  --border: rgba(247, 231, 206, 0.15);
-  
-  /* Text & Accents */
-  --text: #F7E7CE;            /* Champagne Primary Text */
-  --text-secondary: #E5D1B3;  /* Muted Champagne */
-  --muted: #8FA49F;           /* Desaturated Forest Sage */
-  --muted-strong: #6D857F;
-  
-  /* Brand Colors */
-  --primary: #F7E7CE;         /* Champagne as the primary "pop" */
-  --primary-hover: #EBD6B5;
-  --primary-dark: #D4B991;
-  
-  --accent: #2D6356;          /* Bright Forest for UI highlights */
-  --accent-hover: #3D7A6C;
-  
-  /* Functional Colors */
-  --danger: #E67E7E;
-  --warning: #F0B27A;
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  
-  /* Gradients */
-  --skeleton: linear-gradient(90deg, rgba(16, 44, 38, 0.5) 25%, rgba(247, 231, 206, 0.1) 50%, rgba(16, 44, 38, 0.5) 75%);
-}
-
 body.chat-route {
   font-family: var(--app-font);
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: auto;
-  background:
-    radial-gradient(circle at top left, rgba(124, 92, 255, 0.16), transparent 24%),
-    radial-gradient(circle at top right, rgba(41, 211, 145, 0.09), transparent 18%),
-    linear-gradient(180deg, #09101d 0%, #070c17 52%, #060912 100%);
 }
 
 .chat-page--conversation {
@@ -62,22 +25,10 @@ body.chat-route {
 }
 
 .chat-shell {
-  border-radius: 0 !important;
-  max-width: none !important;
-  width: 100% !important;
-  min-height: 100dvh !important;
-  min-height: 100vh !important;
-  height: 100dvh !important;
-  height: 100vh !important;
-  padding: 0 !important;
-  gap: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  background: radial-gradient(circle at top left, #0f172a, #070b16) !important;
-  display: flex !important;
-  flex-direction: column !important;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  overflow: hidden !important;
+  overflow: hidden;
 }
 
 .chat-shell::before {
@@ -86,8 +37,8 @@ body.chat-route {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 15% 18%, rgba(124, 92, 255, 0.08), transparent 16%),
-    radial-gradient(circle at 82% 12%, rgba(41, 211, 145, 0.06), transparent 12%);
+    radial-gradient(circle at 15% 18%, rgba(122, 167, 255, 0.10), transparent 16%),
+    radial-gradient(circle at 82% 12%, rgba(201, 180, 138, 0.08), transparent 12%);
 }
 
 .chat-card.hidden,
@@ -132,8 +83,8 @@ body.chat-route {
 
 .chat-back-btn:hover,
 .chat-menu-btn:hover {
-  background: linear-gradient(180deg, rgba(124, 92, 255, 0.16), rgba(255, 255, 255, 0.06));
-  border-color: rgba(124, 92, 255, 0.28);
+  background: linear-gradient(180deg, rgba(122, 167, 255, 0.16), rgba(255, 255, 255, 0.06));
+  border-color: rgba(122, 167, 255, 0.26);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
@@ -170,8 +121,8 @@ body.chat-route {
 .group-invite-bar {
   flex-shrink: 0;
   padding: 10px 14px;
-  background: rgba(124, 92, 255, 0.1);
-  border-bottom: 1px solid rgba(124, 92, 255, 0.22);
+  background: rgba(122, 167, 255, 0.10);
+  border-bottom: 1px solid rgba(122, 167, 255, 0.18);
 }
 
 .group-invite-inner {
@@ -185,7 +136,7 @@ body.chat-route {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #c4b5fd;
+  color: rgba(238, 242, 255, 0.72);
   font-weight: 700;
 }
 
@@ -202,8 +153,8 @@ body.chat-route {
   padding: 0 14px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(41, 211, 145, 0.15);
-  color: #6ee7b7;
+  background: rgba(201, 180, 138, 0.12);
+  color: rgba(238, 242, 255, 0.92);
   font-weight: 600;
   font-size: 0.82rem;
   cursor: pointer;
@@ -234,7 +185,7 @@ body.chat-route {
   padding: 8px 14px;
   font-size: 0.82rem;
   color: #94a3b8;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -246,7 +197,7 @@ body.chat-route {
   margin: 12px 12px 0;
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(15, 20, 40, 0.95), rgba(10, 14, 30, 0.94));
-  border: 1px solid rgba(124, 92, 255, 0.18);
+  border: 1px solid rgba(122, 167, 255, 0.18);
   box-shadow: var(--ui-shadow-md);
   padding: 18px;
 }
@@ -259,30 +210,16 @@ body.chat-route {
 
 .chat-shell .messages-box {
   flex: 1;
-  min-height: 0 !important;
-  border-radius: 0 !important;
-  border-left: none !important;
-  border-right: none !important;
-  border-top: none !important;
+  min-height: 0;
+  margin: 12px 12px 0;
+  border-radius: 20px;
   padding: 18px 14px 12px;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   background:
-    radial-gradient(circle at top, rgba(124, 92, 255, 0.045), transparent 28%),
-    linear-gradient(180deg, rgba(8, 12, 24, 0.74), rgba(7, 11, 22, 0.94));
+    radial-gradient(circle at top, rgba(122, 167, 255, 0.05), transparent 28%),
+    linear-gradient(180deg, rgba(8, 12, 24, 0.72), rgba(7, 10, 16, 0.94));
   position: relative;
-}
-
-.chat-shell .messages-box::before {
-  content: "";
-  position: sticky;
-  top: 0;
-  display: block;
-  height: 6px;
-  margin-top: -18px;
-  background: linear-gradient(180deg, rgba(7, 11, 22, 0.78), transparent);
-  z-index: 2;
-  pointer-events: none;
 }
 
 .chat-shell .message {
@@ -297,8 +234,8 @@ body.chat-route {
 
 .chat-shell .message.me {
   border-bottom-right-radius: 6px;
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.34), rgba(91, 64, 214, 0.24));
-  border: 1px solid rgba(149, 124, 255, 0.24);
+  background: linear-gradient(135deg, rgba(201, 180, 138, 0.36), rgba(122, 167, 255, 0.22));
+  border: 1px solid rgba(201, 180, 138, 0.22);
 }
 
 .chat-shell .message.stranger {
@@ -372,8 +309,8 @@ body.chat-route {
 .chat-shell .reply-box {
   margin: 0 12px 8px;
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(124, 92, 255, 0.18), rgba(124, 92, 255, 0.1));
-  border: 1px solid rgba(124, 92, 255, 0.22);
+  background: linear-gradient(180deg, rgba(122, 167, 255, 0.16), rgba(122, 167, 255, 0.08));
+  border: 1px solid rgba(122, 167, 255, 0.20);
   box-shadow: var(--ui-shadow-md);
 }
 
@@ -426,9 +363,9 @@ body.chat-route {
 
 #sendBtn {
   order: 3;
-  background: linear-gradient(135deg, #7c5cff, #5fe0b7);
+  background: linear-gradient(135deg, rgba(201, 180, 138, 0.94), rgba(122, 167, 255, 0.65));
   border: none;
-  color: #fff;
+  color: #10131f;
   transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
 }
 
@@ -478,7 +415,7 @@ body.chat-route {
   top: 0;
   bottom: 0;
   width: min(300px, 88vw);
-  background: #0f141f;
+  background: rgba(10, 14, 24, 0.78);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 210;
   padding: calc(16px + var(--app-safe-top)) 16px 24px;
@@ -486,6 +423,9 @@ body.chat-route {
   transition: transform 0.25s ease;
   overflow-y: auto;
   border-radius: 24px 24px 0 0;
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .chat-drawer{backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%)}
 }
 
 .chat-drawer.is-open {
@@ -692,178 +632,3 @@ body.chat-route {
   border-radius: 10px;
 }
 
-/* ===== Forest + Champagne theme override ===== */
-:root {
-  --bg: #0A1A17;
-  --bg-2: #102C26;
-  --bg-3: #1B443B;
-  --panel: rgba(247, 231, 206, 0.05);
-  --panel-strong: rgba(247, 231, 206, 0.10);
-  --border: rgba(247, 231, 206, 0.15);
-  --text: #F7E7CE;
-  --text-secondary: #E5D1B3;
-  --muted: #8FA49F;
-  --muted-strong: #6D857F;
-  --primary: #F7E7CE;
-  --primary-hover: #EBD6B5;
-  --primary-dark: #D4B991;
-  --accent: #2D6356;
-  --accent-hover: #3D7A6C;
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  --skeleton: linear-gradient(90deg, rgba(16, 44, 38, 0.5) 25%, rgba(247, 231, 206, 0.1) 50%, rgba(16, 44, 38, 0.5) 75%);
-}
-
-body,
-body.chat-route {
-  color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(247, 231, 206, 0.08), transparent 25%),
-    radial-gradient(circle at top right, rgba(16, 44, 38, 0.24), transparent 20%),
-    radial-gradient(circle at bottom right, rgba(247, 231, 206, 0.06), transparent 28%),
-    linear-gradient(180deg, #0A1A17 0%, #102C26 60%, #081914 100%) !important;
-}
-
-.site-header,
-.chat-header,
-.chat-app-header {
-  background: rgba(16, 44, 38, 0.84) !important;
-  border-bottom: 1px solid rgba(247, 231, 206, 0.12) !important;
-}
-
-.nav-cta:hover,
-.lang-selector-btn:hover,
-.chat-meta-bar .lang-selector-btn:hover {
-  background: rgba(247, 231, 206, 0.12) !important;
-  border-color: rgba(247, 231, 206, 0.34) !important;
-  color: #F7E7CE !important;
-}
-
-[data-component="language-selector"],
-.chat-meta-bar [data-component="language-selector"] {
-  background: rgba(16, 44, 38, 0.96) !important;
-  border: 1px solid rgba(247, 231, 206, 0.12) !important;
-}
-
-.hero::before,
-.chat-shell::before {
-  background:
-    linear-gradient(180deg, rgba(247, 231, 206, 0.03), transparent 35%),
-    radial-gradient(circle at center, rgba(247, 231, 206, 0.06), transparent 35%) !important;
-}
-
-.badge,
-.setup-badge,
-.search-state,
-.chat-shell .search-state,
-.reply-box,
-.chat-shell .reply-box {
-  background: rgba(247, 231, 206, 0.10) !important;
-  border: 1px solid rgba(247, 231, 206, 0.18) !important;
-  color: #F7E7CE !important;
-}
-
-.btn-primary,
-.app-icon-btn {
-  background: linear-gradient(135deg, #F7E7CE, #D4B991) !important;
-  color: #102C26 !important;
-  border-color: rgba(247, 231, 206, 0.24) !important;
-  box-shadow: 0 14px 36px rgba(16, 44, 38, 0.28) !important;
-}
-
-.btn-primary:hover,
-.app-icon-btn:hover {
-  background: linear-gradient(135deg, #EBD6B5, #CBB087) !important;
-  color: #102C26 !important;
-  box-shadow: 0 20px 48px rgba(16, 44, 38, 0.34) !important;
-}
-
-.btn-secondary,
-.icon-btn,
-.chat-back-btn,
-.chat-menu-btn,
-.lang-selector-btn,
-.chat-meta-bar .lang-selector-btn,
-.pill {
-  background: rgba(247, 231, 206, 0.07) !important;
-  border-color: rgba(247, 231, 206, 0.16) !important;
-  color: #F7E7CE !important;
-}
-
-.chat-shell,
-.messages-box,
-.chat-shell .messages-box,
-.setup-card,
-.chat-card,
-.image-preview,
-.chat-shell .image-preview {
-  background:
-    radial-gradient(circle at top, rgba(247, 231, 206, 0.05), transparent 28%),
-    linear-gradient(180deg, rgba(10, 26, 23, 0.96), rgba(16, 44, 38, 0.96)) !important;
-  border-color: rgba(247, 231, 206, 0.10) !important;
-}
-
-.message.me,
-.chat-shell .message.me,
-.msg.right {
-  background: linear-gradient(135deg, #F7E7CE, #E5D1B3) !important;
-  color: #102C26 !important;
-  border: 1px solid rgba(212, 185, 145, 0.65) !important;
-}
-
-.message.stranger,
-.chat-shell .message.stranger,
-.msg.left,
-.message.system {
-  background: rgba(247, 231, 206, 0.08) !important;
-  border: 1px solid rgba(247, 231, 206, 0.10) !important;
-  color: #F7E7CE !important;
-}
-
-#msg,
-.input-bar input[type="text"],
-.form-group select,
-.form-group input,
-.chat-shell #msg,
-.chat-input {
-  background: rgba(247, 231, 206, 0.06) !important;
-  border-color: rgba(247, 231, 206, 0.12) !important;
-  color: #F7E7CE !important;
-}
-
-#msg::placeholder,
-.form-group input::placeholder,
-.chat-app-subtitle,
-#chatHint.chat-app-subtitle,
-.typing-box,
-#typing {
-  color: #CDBD9F !important;
-}
-
-#msg:focus,
-.form-group select:focus,
-.form-group input:focus,
-.chat-shell #msg:focus {
-  border-color: rgba(247, 231, 206, 0.34) !important;
-  box-shadow: 0 0 0 4px rgba(247, 231, 206, 0.10) !important;
-}
-
-.messages-box::-webkit-scrollbar-thumb {
-  background: rgba(247, 231, 206, 0.34) !important;
-}
-
-.chat-shell {
-  background:
-    radial-gradient(circle at top left, rgba(247, 231, 206, 0.06), transparent 24%),
-    linear-gradient(180deg, #0A1A17 0%, #102C26 100%) !important;
-}
-
-.group-invite-bar,
-.group-guest-hint {
-  background: rgba(247, 231, 206, 0.08) !important;
-  border-bottom: 1px solid rgba(247, 231, 206, 0.12) !important;
-}
-
-.group-invite-label,
-#groupInviteCodeDisplay {
-  color: #F7E7CE !important;
-}

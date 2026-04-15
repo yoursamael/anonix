@@ -1,0 +1,138 @@
+:root{
+  --admin-auth-max:440px;
+}
+
+body.admin-login-route{
+  min-height:100dvh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:var(--s-6) var(--s-4);
+}
+
+.admin-auth{
+  width:min(var(--admin-auth-max), 92vw);
+}
+
+.admin-auth-card{
+  padding:var(--s-7);
+  border-radius:22px;
+}
+
+@media (max-width:420px){
+  .admin-auth-card{padding:var(--s-6)}
+}
+
+.admin-auth-brand{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:var(--s-3);
+  margin-bottom:var(--s-5);
+}
+
+.admin-auth-title{
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  font-size:.95rem;
+  color:var(--text);
+}
+
+.admin-auth-title .pro{
+  color:var(--text);
+  opacity:.9;
+}
+
+.admin-auth h1{
+  margin:0;
+  font-size:1.25rem;
+  letter-spacing:-.02em;
+}
+
+.admin-auth p{
+  margin:8px 0 0;
+  color:var(--muted);
+  line-height:1.6;
+}
+
+.admin-auth-form{
+  margin-top:var(--s-6);
+  display:flex;
+  flex-direction:column;
+  gap:var(--s-4);
+}
+
+.admin-auth-label{
+  display:block;
+  font-size:.78rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--text-2);
+  margin:0 0 10px;
+  font-weight:800;
+}
+
+.admin-auth-input{
+  width:100%;
+  height:48px;
+  border-radius:14px;
+  background:rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.12);
+  color:var(--text);
+  padding:0 12px 0 44px;
+  outline:none;
+  transition:border-color var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease), background var(--t-med) var(--ease);
+}
+
+.admin-auth-input:focus{
+  border-color:rgba(122,167,255,.35);
+  box-shadow:0 0 0 4px rgba(122,167,255,.16);
+}
+
+.admin-auth-input::placeholder{color:rgba(238,242,255,.45)}
+
+.admin-auth-field{
+  position:relative;
+}
+
+.admin-auth-field .icon{
+  position:absolute;
+  left:14px;
+  top:50%;
+  transform:translateY(-50%);
+  opacity:.78;
+}
+
+.admin-auth-btn{
+  width:100%;
+  justify-content:center;
+  padding:14px 14px;
+}
+
+#msg{
+  min-height:20px;
+  margin-top:var(--s-4);
+  font-size:.9rem;
+  color:var(--danger);
+  font-weight:650;
+}
+
+#msg.is-success{color:var(--success)}
+
+.loader-spin{
+  width:14px;
+  height:14px;
+  border-radius:999px;
+  border:2px solid rgba(0,0,0,.22);
+  border-top-color:rgba(16,19,31,.85);
+  display:inline-block;
+  animation:spin 900ms linear infinite;
+}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.icon{width:18px;height:18px}
+.icon-lg{width:24px;height:24px}
+.icon-xl{width:48px;height:48px}
+

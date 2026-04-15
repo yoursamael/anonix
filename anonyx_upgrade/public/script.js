@@ -1,14 +1,8 @@
-let userId = sessionStorage.getItem("anonyx_sid");
-if (!userId) {
-  userId = localStorage.getItem("anonyx_user") || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `u_${Date.now()}`);
-  sessionStorage.setItem("anonyx_sid", userId);
-  localStorage.setItem("anonyx_user", userId);
-}
-
-const socket = io({ query: { userId } });
+// Anonymous sessions are server-issued via secure cookie/session.
+// Do not create client-generated long-lived identifiers (no localStorage user IDs).
+const socket = io({ withCredentials: true });
 
 let room = null;
-let encryptionKey = null;
 let chatMode = "dm";
 let groupRoomId = null;
 let replyTo = null;
@@ -17,6 +11,7 @@ let chatTimerInterval = null;
 let isMuted = sessionStorage.getItem("anonyx_sounds_muted") === "1";
 let pendingImageFile = null;
 let typingTimeout = null;
+let selfId = null;
 let groupOwnerUserId = null;
 let groupInviteLocked = true;
 let lastReadAllSent = 0;
@@ -73,7 +68,7 @@ const imgBtn = getEl("imgBtn");
 const cancelImageBtn = getEl("cancelImageBtn");
 
 if (window.AnonyxExperiments) {
-  AnonyxExperiments.bootstrap(userId).catch(() => {});
+  AnonyxExperiments.bootstrap().catch(() => {});
 }
 
 function cleanupOldMessages() {
@@ -213,7 +208,7 @@ function setChatHeaderTitle(title, subtitle) {
 }
 
 function isGroupHost() {
-  return groupOwnerUserId && groupOwnerUserId === userId;
+  return !!(groupOwnerUserId && selfId && groupOwnerUserId === selfId);
 }
 
 function hideGroupInviteUi() {
@@ -355,8 +350,9 @@ syncComposerState();
 
 socket.on("session:sync", (s) => {
   if (!s) return;
+  if (s.selfId) selfId = s.selfId;
   if (s.mode === "idle") {
-    if (room || encryptionKey || groupRoomId) {
+    if (room || groupRoomId) {
       const wasOpen = chatSection && !chatSection.classList.contains("hidden");
       stopSearchHints();
       resetGroupClientState();
@@ -374,7 +370,6 @@ socket.on("session:sync", (s) => {
   if (s.mode === "group" && s.groupRoomId) {
     chatMode = "group";
     groupRoomId = s.groupRoomId;
-    encryptionKey = s.groupRoomId;
     room = true;
     groupOwnerUserId = s.ownerUserId || null;
     groupInviteLocked = s.inviteLocked !== false;
@@ -385,7 +380,6 @@ socket.on("session:sync", (s) => {
     chatMode = "dm";
     groupRoomId = null;
     room = true;
-    encryptionKey = "true";
     if (setupSection) setupSection.classList.add("hidden");
     if (chatSection) chatSection.classList.remove("hidden");
     if (searchState) searchState.classList.add("hidden");
@@ -402,7 +396,6 @@ socket.on("session:sync", (s) => {
 function resetGroupClientState() {
   chatMode = "dm";
   groupRoomId = null;
-  encryptionKey = null;
   room = null;
   groupOwnerUserId = null;
   groupInviteLocked = true;
@@ -451,7 +444,7 @@ function startChat() {
   requestPushPermission();
   const gender = getEl("gender")?.value || "unspecified";
   const preference = getEl("preference")?.value || "both";
-  const language = "en";
+  const language = (window.i18n && window.i18n.currentLanguage) ? window.i18n.currentLanguage : "en";
   const interests = [];
   resetGroupClientState();
   socket.emit("start", { gender, preference, language, interests });
@@ -517,7 +510,6 @@ socket.on("online", (count) => {
 socket.on("searching", () => {
   if (chatMode === "group") return;
   room = null;
-  encryptionKey = null;
   stopTimer();
   if (matchQuality) matchQuality.innerText = "Searching";
   if (searchState) searchState.classList.remove("hidden");
@@ -538,7 +530,6 @@ socket.on("matched", (data) => {
   chatMode = "dm";
   groupRoomId = null;
   room = true;
-  encryptionKey = "true";
   if (messages) messages.innerHTML = "";
   cancelReply();
   stopTimer();
@@ -620,9 +611,8 @@ socket.on("message:reaction", ({ msgId, reaction }) => {
 socket.on("group:created", (payload) => {
   if (!payload || !payload.roomId) return;
   groupRoomId = payload.roomId;
-  encryptionKey = payload.roomId;
   room = true;
-  groupOwnerUserId = payload.ownerUserId || userId;
+  groupOwnerUserId = payload.ownerUserId || selfId;
   groupInviteLocked = payload.inviteLocked !== false;
   openGroupShell("Share the link or code with people you trust.", payload.inviteCode || "");
   addSystem("Group created. Share the code so others can join.");
@@ -631,7 +621,6 @@ socket.on("group:created", (payload) => {
 socket.on("group:joined", (payload) => {
   if (!payload || !payload.roomId) return;
   groupRoomId = payload.roomId;
-  encryptionKey = payload.roomId;
   room = true;
   groupOwnerUserId = payload.ownerUserId || null;
   groupInviteLocked = payload.inviteLocked !== false;
@@ -648,22 +637,11 @@ socket.on("group:roster", (payload) => {
 });
 
 socket.on("group:message", (data) => {
-  if (!encryptionKey) return;
   const who = data.senderId ? String(data.senderId).slice(0, 10) : "Member";
   if (data.img) {
-    try {
-      const decryptedImg = CryptoJS.AES.decrypt(data.img, encryptionKey).toString(CryptoJS.enc.Utf8);
-      addStrangerImage(decryptedImg, data.replyTo || null, data.imageId || null, data.expiresIn || 10000, who);
-    } catch (e) {
-      addStrangerImage("", data.replyTo || null, data.imageId || null, data.expiresIn || 10000, who);
-    }
+    addStrangerImage(String(data.img || ""), data.replyTo || null, data.imageId || null, data.expiresIn || 10000, who);
   } else {
-    try {
-      const decryptedMsg = CryptoJS.AES.decrypt(data.msg, encryptionKey).toString(CryptoJS.enc.Utf8);
-      addStranger(decryptedMsg, data.replyTo || null, who);
-    } catch (e) {
-      addStranger("Could not decrypt message", data.replyTo || null, who);
-    }
+    addStranger(String(data.msg || ""), data.replyTo || null, who);
   }
   if (typingDiv) typingDiv.innerText = "";
   playTick();
@@ -698,21 +676,10 @@ socket.on("group:shutdown", () => {
 
 socket.on("message", (data) => {
   if (chatMode === "group") return;
-  const key = encryptionKey || room;
   if (data.img) {
-    try {
-      const decryptedImg = CryptoJS.AES.decrypt(data.img, key).toString(CryptoJS.enc.Utf8);
-      addStrangerImage(decryptedImg, data.replyTo || null, data.imageId || null, data.expiresIn || 10000, null, data.msgId);
-    } catch (e) {
-      addStrangerImage("", data.replyTo || null, data.imageId || null, data.expiresIn || 10000, null, data.msgId);
-    }
+    addStrangerImage(String(data.img || ""), data.replyTo || null, data.imageId || null, data.expiresIn || 10000, null, data.msgId);
   } else {
-    try {
-      const decryptedMsg = CryptoJS.AES.decrypt(data.msg, key).toString(CryptoJS.enc.Utf8);
-      addStranger(decryptedMsg, data.replyTo || null, null, data.msgId);
-    } catch (e) {
-      addStranger("Error: Could not decrypt message", data.replyTo || null, null, data.msgId);
-    }
+    addStranger(String(data.msg || ""), data.replyTo || null, null, data.msgId);
   }
   if (typingDiv) typingDiv.innerText = "";
   playTick();
@@ -756,27 +723,16 @@ function sendMsg() {
   if (!msgInput) return;
   const text = msgInput.value.trim();
   if (!text) return;
-  if (!room || !encryptionKey) {
+  if (!room) {
     alert("Please start a chat or join a group first.");
     return;
   }
   const cleanText = sanitizeText(text);
-  if (typeof CryptoJS === "undefined") {
-    alert("Encryption library error.");
-    return;
-  }
-  let encryptedMsg;
-  try {
-    encryptedMsg = CryptoJS.AES.encrypt(cleanText, encryptionKey).toString();
-  } catch (err) {
-    alert("Encryption failed.");
-    return;
-  }
   const msgId = chatMode === "dm" ? generateMsgId() : null;
   if (chatMode === "group") {
-    socket.emit("group:message", { msg: encryptedMsg, replyTo });
+    socket.emit("group:message", { msg: cleanText, replyTo });
   } else {
-    socket.emit("message", { msg: encryptedMsg, replyTo, msgId });
+    socket.emit("message", { msg: cleanText, replyTo, msgId });
   }
   addMe(cleanText, replyTo, true, msgId);
   setSendLoading(true);
@@ -818,25 +774,20 @@ function clearImagePreview() {
 
 function sendImage() {
   if (!pendingImageFile) return;
-  if (!room || !encryptionKey) {
+  if (!room) {
     alert("Not connected.");
     return;
   }
   const reader = new FileReader();
   reader.onload = function (e) {
-    if (typeof CryptoJS === "undefined") return;
     const img = e.target.result;
-    let encryptedImg;
-    try {
-      encryptedImg = CryptoJS.AES.encrypt(img, encryptionKey).toString();
-    } catch (err) { return; }
     const imageId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const expiresIn = 10000;
     const msgId = chatMode === "dm" ? generateMsgId() : null;
     if (chatMode === "group") {
-      socket.emit("group:message", { img: encryptedImg, replyTo, imageId, expiresIn });
+      socket.emit("group:message", { img, replyTo, imageId, expiresIn });
     } else {
-      socket.emit("message", { img: encryptedImg, replyTo, imageId, expiresIn, msgId });
+      socket.emit("message", { img, replyTo, imageId, expiresIn, msgId });
     }
     addMyImage(img, replyTo, imageId, expiresIn, msgId);
     setSendLoading(true);
@@ -863,7 +814,6 @@ function skip() {
   }
   socket.emit("skip");
   room = null;
-  encryptionKey = null;
   stopTimer();
   if (matchQuality) matchQuality.innerText = "Searching";
   startSearchHints();

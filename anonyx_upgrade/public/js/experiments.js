@@ -14,7 +14,7 @@
   window.AnonyxExperiments = {
     async bootstrap(userId) {
       try {
-        const r = await fetch("/api/experiments?userId=" + encodeURIComponent(userId || "anon"));
+        const r = await fetch("/api/experiments");
         const data = await r.json();
         const variants = data.variants || {};
         document.documentElement.dataset.anonyxAb = JSON.stringify(variants);

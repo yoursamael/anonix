@@ -5,6 +5,8 @@ function createStore() {
     activeRooms: new Map(),
     messageLimit: new Map(),
     typingLimit: new Map(),
+    sessionLimit: new Map(),
+    ipLimit: new Map(),
     roomStartTimes: new Map(),
     recentSkips: new Map(),
     reconnectBuffer: new Map(),

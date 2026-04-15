@@ -5,12 +5,29 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== "undefined" && lucide.createIcons) {
+        try { lucide.createIcons(); } catch (_) {}
+    }
     const loginBtn = document.getElementById('loginBtn');
+    const loginBtnLabel = document.getElementById("loginBtnLabel");
+    const loginBtnSpinner = document.getElementById("loginBtnSpinner");
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const msgArea = document.getElementById('msg');
 
     if (!loginBtn) return;
+
+    const setMessage = (text, kind = "error") => {
+        if (!msgArea) return;
+        msgArea.classList.toggle("is-success", kind === "success");
+        msgArea.innerText = text || "";
+    };
+
+    const setLoading = (isLoading) => {
+        if (loginBtnSpinner) loginBtnSpinner.classList.toggle("hidden", !isLoading);
+        if (loginBtnLabel) loginBtnLabel.innerText = isLoading ? "Verifying identity" : "Verify credentials";
+        loginBtn.disabled = !!isLoading;
+    };
 
     /**
      * Submission Handler
@@ -20,14 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value;
 
         if (!username || !password) {
-            msgArea.innerText = "Crucial credentials missing.";
+            setMessage("Crucial credentials missing.");
             return;
         }
 
-        msgArea.innerText = "";
-        const originalText = loginBtn.innerHTML;
-        loginBtn.innerHTML = "Verifying Identity... <div class='loader-spin' style='width:14px; height:14px; margin:0; display:inline-block'></div>";
-        loginBtn.disabled = true;
+        setMessage("");
+        setLoading(true);
 
         try {
             const res = await fetch('/admin/login', {
@@ -39,31 +54,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (!res.ok) {
-                msgArea.innerText = data.message || "Invalid administrative credentials.";
-                loginBtn.innerHTML = originalText;
-                loginBtn.disabled = false;
+                setMessage(data.message || "Invalid administrative credentials.");
+                setLoading(false);
                 return;
             }
 
             // Redirect to dashboard on success
-            msgArea.style.color = "#10b981";
-            msgArea.innerText = "Identity Synchronized. Redirecting...";
+            setMessage("Identity synchronized. Redirecting...", "success");
             
             setTimeout(() => {
                 window.location.href = '/admin';
             }, 500);
 
         } catch (err) {
-            msgArea.innerText = "Connection Refused. Is the server offline?";
-            loginBtn.innerHTML = originalText;
-            loginBtn.disabled = false;
+            setMessage("Connection refused. Is the server offline?");
+            setLoading(false);
         }
     };
 
     /**
      * Event Listeners
      */
-    loginBtn.onclick = handleLogin;
+    loginBtn.addEventListener("click", handleLogin);
 
     [usernameInput, passwordInput].forEach(el => {
         el.addEventListener('keydown', (e) => {

@@ -17,11 +17,10 @@
   <meta property="og:image" content="https://anonyx.online/og-image.jpg" />
   <link rel="canonical" href="https://anonyx.online/chat" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="/style.css" />
   <link rel="stylesheet" href="/anonyx.css" />
   <link rel="stylesheet" href="/chat-app.css" />
   <link rel="stylesheet" href="/mobile-rtl.css" />
-  <script src="/vendor/crypto-js.js"></script>
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body class="chat-route">
   <div class="chat-page" id="chatPageRoot">
@@ -68,12 +67,12 @@
           </div>
 </div>
 
-        <div class="group-setup" style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08);">
-          <h2 class="group-setup-title" style="font-size: 1rem; margin: 0 0 0.35rem 0;">Group chat</h2>
-          <p style="font-size: 0.85rem; opacity: 0.85; margin: 0 0 0.75rem 0;">Create a room or join with a code (up to 8 people). Messages use the same encryption style as 1:1.</p>
-          <div class="group-setup-row" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+        <div class="group-setup">
+          <h2 class="group-setup-title">Group chat</h2>
+          <p class="group-setup-desc">Create a room or join with a code (up to 8 people). Keep it respectful and avoid sharing personal info.</p>
+          <div class="group-setup-row">
             <button type="button" id="groupCreateBtn" class="btn btn-secondary">Create group</button>
-            <input type="text" id="groupJoinInput" maxlength="20" placeholder="Room code" autocomplete="off" aria-label="Group room code" style="min-width: 120px; padding: 0.5rem 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: inherit;" />
+            <input type="text" id="groupJoinInput" class="group-code-input" maxlength="20" placeholder="Room code" autocomplete="off" aria-label="Group room code" />
             <button type="button" id="groupJoinBtn" class="btn btn-secondary">Join group</button>
           </div>
         </div>
@@ -141,7 +140,7 @@
             <button type="button" class="btn btn-danger" id="reportBtnDrawer">Report</button>
             <button type="button" class="btn btn-secondary" id="skipBtnDrawer">Skip stranger</button>
             <button type="button" class="btn btn-secondary hidden" id="leaveGroupBtnDrawer">Leave group</button>
-            <a href="/" class="btn btn-secondary" style="display:inline-flex;text-decoration:none;align-items:center;justify-content:center;">Home</a>
+            <a href="/" class="btn btn-secondary">Home</a>
           </div>
         </aside>
 

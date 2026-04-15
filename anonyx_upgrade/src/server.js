@@ -31,7 +31,6 @@ const {
   migrateLegacyAnalytics
 } = require("./analytics");
 const { assignVariants } = require("./ab");
-const User = require("./models/User");
 const { Report, Ban, IpBan } = require("./models/Moderation");
 const {
   removeFromWaiting,
@@ -141,16 +140,61 @@ async function bootstrap() {
 
   app.use(sessionMiddleware);
 
+  function ensureAnonSession(req) {
+    if (!req.session) return null;
+    if (!req.session.anonId) {
+      req.session.anonId = crypto.randomBytes(18).toString("base64url");
+      req.session.anonIssuedAt = Date.now();
+    }
+    return req.session.anonId;
+  }
+
+  function fixedWindowAllow(map, key, limit, windowMs) {
+    const now = Date.now();
+    const hit = map.get(key);
+    if (!hit || now >= hit.resetAt) {
+      map.set(key, { count: 1, resetAt: now + windowMs });
+      return true;
+    }
+    if (hit.count >= limit) return false;
+    hit.count += 1;
+    return true;
+  }
+
+  function allowSession(socket, kind, limit, windowMs) {
+    const sid = socket.anonId;
+    if (!sid) return false;
+    return fixedWindowAllow(store.sessionLimit, `${kind}:sess:${sid}`, limit, windowMs);
+  }
+
+  function allowIp(ip, kind, limit, windowMs) {
+    if (!ip) return false;
+    return fixedWindowAllow(store.ipLimit, `${kind}:ip:${ip}`, limit, windowMs);
+  }
+
+  function isAllowedImageDataUrl(value) {
+    if (typeof value !== "string") return false;
+    if (!value.startsWith("data:")) return false;
+    const headEnd = value.indexOf(",");
+    if (headEnd === -1) return false;
+    const header = value.slice(5, headEnd); // after "data:"
+    const [mime, ...attrs] = header.split(";");
+    if (!mime || !config.image.allowedMimeTypes.includes(mime)) return false;
+    if (!attrs.includes("base64")) return false;
+    return true;
+  }
+
   const helmetBase = {
     contentSecurityPolicy: {
       useDefaults: true,
       directives: {
         "default-src": ["'self'"],
-        "script-src": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://unpkg.com"],
+        "script-src": ["'self'", "https://cdnjs.cloudflare.com", "https://unpkg.com", "https://cdn.jsdelivr.net"],
         "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
         "img-src": ["'self'", "data:", "https:"],
         "connect-src": ["'self'", "ws:", "wss:"],
+        "script-src-attr": ["'none'"],
         "object-src": ["'none'"],
         "base-uri": ["'self'"],
         "form-action": ["'self'"]
@@ -207,6 +251,7 @@ async function bootstrap() {
   app.use(express.static(path.join(__dirname, "../public")));
 
   app.get("/api/qr.svg", qrLimiter, (req, res) => {
+    ensureAnonSession(req);
     const raw = String(req.query.d || "");
     const text = sanitizeText(raw, 512);
 
@@ -228,24 +273,28 @@ async function bootstrap() {
 
   // --- PUBLIC ROUTES ---
   app.get("/", (req, res) => {
+    ensureAnonSession(req);
     registerPageView("home", req.headers["user-agent"] || "");
     res.sendFile(path.join(__dirname, "../public", "index.html"));
   });
 
   app.get("/chat", (req, res) => {
+    ensureAnonSession(req);
     registerPageView("chat", req.headers["user-agent"] || "");
     res.sendFile(path.join(__dirname, "../public", "chat.html"));
   });
 
   app.get("/api/experiments", experimentsLimiter, (req, res) => {
-    const userId = sanitizeText(String(req.query.userId || ""), 128) || "anon";
+    const anonId = ensureAnonSession(req) || "anon";
     res.json({
-      variants: assignVariants(userId, config.experiments || {}),
+      variants: assignVariants(anonId, config.experiments || {}),
       experiments: Object.keys(config.experiments || {})
     });
   });
 
   app.post("/api/beacon", beaconLimiter, (req, res) => {
+    const anonId = ensureAnonSession(req);
+    if (!anonId) return res.status(401).json({ ok: false });
     const kind = sanitizeText(String((req.body && req.body.kind) || ""), 64);
     if (!kind) return res.status(400).json({ ok: false });
     if (!/^[a-zA-Z0-9_.:-]+$/.test(kind)) return res.status(400).json({ ok: false });
@@ -263,6 +312,15 @@ async function bootstrap() {
     if (heatKinds.has(kind)) {
       recordHeatmap(kind).catch(() => {});
     } else if (kind.startsWith("ab_")) {
+      const allowedAb = new Set();
+      for (const [name, def] of Object.entries(config.experiments || {})) {
+        const variants = Array.isArray(def.variants) && def.variants.length ? def.variants : ["A", "B"];
+        for (const v of variants) {
+          allowedAb.add(`ab_expose_${name}_${v}`);
+          allowedAb.add(`ab_convert_${name}_${v}`);
+        }
+      }
+      if (!allowedAb.has(kind)) return res.status(400).json({ ok: false });
       recordAbStat(kind).catch(() => {});
     }
 
@@ -288,6 +346,7 @@ async function bootstrap() {
     if (!req.session || !req.session.admin) {
       return res.redirect("/admin/login");
     }
+    res.set("Cache-Control", "no-store");
     res.sendFile(path.join(__dirname, "../public", "admin.html"));
   });
 
@@ -295,6 +354,7 @@ async function bootstrap() {
     if (req.session && req.session.admin) {
       return res.redirect("/admin");
     }
+    res.set("Cache-Control", "no-store");
     res.sendFile(path.join(__dirname, "../public", "admin-login.html"));
   });
 
@@ -335,6 +395,16 @@ async function bootstrap() {
       return res.status(401).json({ ok: false });
     }
     res.json({ ok: true, admin: req.session.admin });
+  });
+
+  app.get("/privacy-policy", (req, res) => {
+    ensureAnonSession(req);
+    res.sendFile(path.join(__dirname, "../public", "privacy-policy.html"));
+  });
+
+  app.get("/terms", (req, res) => {
+    ensureAnonSession(req);
+    res.sendFile(path.join(__dirname, "../public", "terms.html"));
   });
 
   // --- DATA FETCHING (AUTH PROTECTED) ---
@@ -465,13 +535,36 @@ async function bootstrap() {
 
   const server = http.createServer(app);
 
+  const corsOriginsEnv = process.env.CORS_ORIGINS;
+  const corsOrigins = corsOriginsEnv
+    ? corsOriginsEnv.split(",").map((s) => s.trim()).filter(Boolean)
+    : null;
+
+  const defaultProdOrigin = config.domain && /^https?:\/\//.test(config.domain)
+    ? config.domain
+    : `https://${config.domain}`;
+
   const io = new Server(server, {
     maxHttpBufferSize: config.maxHttpBufferSize || 1e7,
-    cors: { origin: true, methods: ["GET", "POST"], credentials: true }
+    cors: {
+      origin: corsOrigins || (config.isProduction ? [defaultProdOrigin] : true),
+      methods: ["GET", "POST"],
+      credentials: true
+    }
   });
 
   const wrapSession = (middleware) => (socket, next) => middleware(socket.request, {}, next);
   io.use(wrapSession(sessionMiddleware));
+  io.use((socket, next) => {
+    const sess = socket.request && socket.request.session;
+    if (!sess) return next(new Error("Missing session"));
+    if (!sess.anonId) {
+      sess.anonId = crypto.randomBytes(18).toString("base64url");
+      sess.anonIssuedAt = Date.now();
+      return sess.save((err) => next(err || undefined));
+    }
+    return next();
+  });
 
   setInterval(() => {
     io.to("__admin__").emit("admin:metrics", {
@@ -489,9 +582,12 @@ async function bootstrap() {
     const { userId, reason } = req.body;
     if (!userId) return res.status(400).json({ ok: false });
 
-    await Ban.create({ userId, reason });
+    const target = sanitizeText(String(userId), 120);
+    if (!/^[a-zA-Z0-9_-]{6,180}$/.test(target)) return res.status(400).json({ ok: false });
 
-    const sockets = store.users.get(userId);
+    await Ban.create({ userId: target, reason: sanitizeText(String(reason || ""), 160) });
+
+    const sockets = store.users.get(target);
     if (sockets) {
       sockets.forEach((id) => {
         const s = io.sockets.sockets.get(id);
@@ -546,7 +642,7 @@ async function bootstrap() {
       const users = [];
       for (const sid of meta.sockets) {
         const s = io.sockets.sockets.get(sid);
-        if (s && s.userId) users.push(s.userId);
+        if (s && s.anonId) users.push(s.anonId);
       }
 
       return {
@@ -597,7 +693,7 @@ async function bootstrap() {
           s.partnerId = null;
           s.leave(roomId);
 
-          console.log(`[Admin] Re-queuing ${s.userId} from terminated room.`);
+          console.log(`[Admin] Re-queuing ${s.anonId || s.userId} from terminated room.`);
           setTimeout(() => matchUser(s), 500);
         }
       });
@@ -609,11 +705,13 @@ async function bootstrap() {
 
   app.post("/admin/ip-ban", adminAuth, async (req, res) => {
     const { ip, reason } = req.body;
-    await IpBan.create({ ip, reason });
+    const targetIp = sanitizeText(String(ip || ""), 120);
+    if (!targetIp) return res.status(400).json({ ok: false });
+    await IpBan.create({ ip: targetIp, reason: sanitizeText(String(reason || ""), 160) });
 
     const allSockets = await io.fetchSockets();
     allSockets.forEach((s) => {
-      if (getClientIp(s) === ip) {
+      if (getClientIp(s) === targetIp) {
         s.emit("system", "⛔ IP Banned.");
         s.disconnect(true);
       }
@@ -686,36 +784,36 @@ async function bootstrap() {
     let bestScore = 0;
     let partnerIdx = -1;
 
-    console.log(`[Matching] ${socket.userId} searching. Queue size: ${store.waiting.length}`);
+    console.log(`[Matching] ${(socket.anonId || socket.userId || "anon")} searching. Queue size: ${store.waiting.length}`);
     if (store.waiting.length === 0) console.log("[Matching] Queue empty, standby.");
 
     for (let i = 0; i < store.waiting.length; i++) {
       const candidate = store.waiting[i];
 
-      if (candidate.id === socket.id || candidate.userId === socket.userId) continue;
+      if (candidate.id === socket.id || (candidate.anonId || candidate.userId) === (socket.anonId || socket.userId)) continue;
       if (candidate.groupRoomId) continue;
 
       if (candidate.room) {
-        console.warn(`[Matching] Clean-up: Removing matched candidate ${candidate.userId} from queue.`);
+        console.warn(`[Matching] Clean-up: Removing matched candidate ${(candidate.anonId || candidate.userId)} from queue.`);
         store.waiting.splice(i, 1);
         i--;
         continue;
       }
 
-      if (hasRecentSkip(store.recentSkips, socket.userId, candidate.userId)) {
-        console.log(`[Matching] Skip: Recent skip between ${socket.userId} and ${candidate.userId}`);
+      if (hasRecentSkip(store.recentSkips, (socket.anonId || socket.userId), (candidate.anonId || candidate.userId))) {
+        console.log(`[Matching] Skip: Recent skip between ${(socket.anonId || socket.userId)} and ${(candidate.anonId || candidate.userId)}`);
         continue;
       }
 
       const score = getMatchScore(socket, candidate);
       if (score <= 0) {
         console.log(
-          `[Matching] Incompatible: ${socket.userId} (${socket.gender}->${socket.preference}) vs ${candidate.userId} (${candidate.gender}->${candidate.preference})`
+          `[Matching] Incompatible: ${(socket.anonId || socket.userId)} (${socket.gender}->${socket.preference}) vs ${(candidate.anonId || candidate.userId)} (${candidate.gender}->${candidate.preference})`
         );
         continue;
       }
 
-      console.log(`[Matching] Potential Match: ${candidate.userId} Score: ${score}`);
+      console.log(`[Matching] Potential Match: ${(candidate.anonId || candidate.userId)} Score: ${score}`);
 
       if (score > bestScore) {
         bestScore = score;
@@ -725,21 +823,21 @@ async function bootstrap() {
     }
 
     if (bestPartner && bestScore > 0) {
-      console.log(`[Matching] MATCH SUCCESS: ${socket.userId} + ${bestPartner.userId}`);
+      console.log(`[Matching] MATCH SUCCESS: ${(socket.anonId || socket.userId)} + ${(bestPartner.anonId || bestPartner.userId)}`);
 
       store.waiting.splice(partnerIdx, 1);
 
-      const room = `room-${socket.userId}-${bestPartner.userId}`;
+      const room = `dm-${crypto.randomBytes(12).toString("hex")}`;
       socket.join(room);
       bestPartner.join(room);
 
       socket.room = room;
       bestPartner.room = room;
-      socket.partnerId = bestPartner.userId;
-      bestPartner.partnerId = socket.userId;
+      socket.partnerId = bestPartner.anonId || bestPartner.userId;
+      bestPartner.partnerId = socket.anonId || socket.userId;
 
       store.activeRooms.set(room, {
-        users: [socket.userId, bestPartner.userId],
+        users: [(socket.anonId || socket.userId), (bestPartner.anonId || bestPartner.userId)],
         startedAt: Date.now()
       });
 
@@ -748,7 +846,7 @@ async function bootstrap() {
       bestPartner.emit("matched", { partnerLogo: "💞" });
       io.to(room).emit("system", "Say hii ...💞 ");
     } else {
-      console.log(`[Matching] Entering queue: ${socket.userId}`);
+      console.log(`[Matching] Entering queue: ${(socket.anonId || socket.userId)}`);
       store.waiting.push(socket);
       socket.emit("searching");
     }
@@ -756,8 +854,13 @@ async function bootstrap() {
 
   io.on("connection", async (socket) => {
     const ip = getClientIp(socket);
-    const userId = sanitizeText(String(socket.handshake.query.userId || ""), 64);
-    if (!userId) return socket.disconnect(true);
+    if (!allowIp(ip, "conn", 60, 60_000)) {
+      socket.emit("system", "Too many connection attempts. Try again soon.");
+      return socket.disconnect(true);
+    }
+
+    const anonId = socket.request && socket.request.session && socket.request.session.anonId;
+    if (!anonId) return socket.disconnect(true);
 
     const ipBan = await IpBan.findOne({ ip });
     if (ipBan && (!ipBan.expiresAt || ipBan.expiresAt > new Date())) {
@@ -765,15 +868,15 @@ async function bootstrap() {
       return socket.disconnect(true);
     }
 
-    const ban = await Ban.findOne({ userId });
+    const ban = await Ban.findOne({ userId: anonId });
     if (ban && (!ban.expiresAt || ban.expiresAt > new Date())) {
       socket.emit("system", "🚫 Your account is banned.");
       return socket.disconnect(true);
     }
 
-    socket.userId = userId;
+    socket.anonId = anonId;
 
-    const existingBuffer = store.reconnectBuffer.get(userId);
+    const existingBuffer = store.reconnectBuffer.get(anonId);
     if (existingBuffer) {
       clearTimeout(existingBuffer.timer);
       const roomId = existingBuffer.roomId;
@@ -781,16 +884,24 @@ async function bootstrap() {
       socket.join(roomId);
       socket.room = roomId;
       socket.partnerId = existingBuffer.partnerId;
-      store.reconnectBuffer.delete(userId);
+      store.reconnectBuffer.delete(anonId);
       socket.emit("system", "Reconnected!");
       socket.to(roomId).emit("system", "Partner reconnected.");
     }
 
-    if (!store.users.has(userId)) {
-      store.users.set(userId, new Set());
+    if (!store.users.has(anonId)) {
+      store.users.set(anonId, new Set());
     }
 
-    store.users.get(userId).add(socket.id);
+    const sessionSockets = store.users.get(anonId);
+    sessionSockets.add(socket.id);
+
+    const maxTabs = Number(config.maxTabsPerUser) || 3;
+    if (sessionSockets.size > maxTabs) {
+      sessionSockets.delete(socket.id);
+      socket.emit("tabLimitExceeded", "Too many tabs open for this anonymous session. Close other tabs and try again.");
+      return socket.disconnect(true);
+    }
     io.emit("online", store.users.size);
 
     (function emitSessionSync() {
@@ -798,6 +909,7 @@ async function bootstrap() {
         const g = store.groupRooms.get(socket.groupRoomId);
         socket.emit("session:sync", {
           mode: "group",
+          selfId: socket.anonId,
           groupRoomId: socket.groupRoomId,
           inviteCode: String(socket.groupRoomId).replace(/^grp-/, ""),
           ownerUserId: g ? g.ownerUserId : null,
@@ -806,12 +918,12 @@ async function bootstrap() {
         return;
       }
 
-      if (socket.room && String(socket.room).startsWith("room-")) {
-        socket.emit("session:sync", { mode: "dm", active: true });
+      if (socket.room && String(socket.room).startsWith("dm-")) {
+        socket.emit("session:sync", { mode: "dm", active: true, selfId: socket.anonId });
         return;
       }
 
-      socket.emit("session:sync", { mode: "idle" });
+      socket.emit("session:sync", { mode: "idle", selfId: socket.anonId });
     })();
 
     socket.on("admin:subscribe", () => {
@@ -824,7 +936,7 @@ async function bootstrap() {
     });
 
     socket.on("group:create", () => {
-      if (!socket.userId) return;
+      if (!socket.anonId) return;
 
       const maxRooms = (config.groupChat && config.groupChat.maxRooms) || 400;
       if (store.groupRooms.size >= maxRooms) {
@@ -841,7 +953,7 @@ async function bootstrap() {
 
       store.groupRooms.set(roomId, {
         createdAt: Date.now(),
-        ownerUserId: socket.userId,
+        ownerUserId: socket.anonId,
         inviteLocked,
         sockets: new Set([socket.id])
       });
@@ -852,14 +964,14 @@ async function bootstrap() {
       socket.emit("group:created", {
         roomId,
         inviteCode: code,
-        ownerUserId: socket.userId,
+        ownerUserId: socket.anonId,
         inviteLocked
       });
 
       io.to(roomId).emit("group:roster", {
         roomId,
         memberCount: 1,
-        ownerUserId: socket.userId,
+        ownerUserId: socket.anonId,
         inviteLocked
       });
 
@@ -877,7 +989,7 @@ async function bootstrap() {
       const distinctUsers = new Set();
       for (const sid of g.sockets) {
         const s = io.sockets.sockets.get(sid);
-        if (s && s.userId) distinctUsers.add(s.userId);
+        if (s && s.anonId) distinctUsers.add(s.anonId);
       }
 
       const maxMembers = (config.groupChat && config.groupChat.maxMembers) || 8;
@@ -898,7 +1010,7 @@ async function bootstrap() {
         inviteCode: roomId.replace(/^grp-/, ""),
         ownerUserId: g.ownerUserId,
         inviteLocked: g.inviteLocked !== false,
-        isOwner: socket.userId === g.ownerUserId
+        isOwner: socket.anonId === g.ownerUserId
       });
 
       io.to(roomId).emit("group:roster", {
@@ -922,6 +1034,10 @@ async function bootstrap() {
       const roomId = socket.groupRoomId;
       const now = Date.now();
 
+      if (!allowSession(socket, "gmsg", 60, 60_000) || !allowIp(ip, "gmsg", 240, 60_000)) {
+        return socket.emit("system", "âš ï¸ Slow down in group chat.");
+      }
+
       socket.gMsgCount = (socket.gMsgCount || 0) + 1;
       if (socket.gLastMsg && now - socket.gLastMsg < 2000 && socket.gMsgCount > 10) {
         return socket.emit("system", "⚠️ Slow down in group chat.");
@@ -934,13 +1050,16 @@ async function bootstrap() {
         if (typeof img !== "string" || img.length > config.image.maxPayloadLength) {
           return socket.emit("system", "❌ Image invalid or too large.");
         }
+        if (!isAllowedImageDataUrl(img)) {
+          return socket.emit("system", "Unsupported image type.");
+        }
 
         socket.to(roomId).emit("group:message", {
           img,
-          replyTo: payload.replyTo,
+          replyTo: sanitizeText(String(payload.replyTo || ""), 160) || null,
           imageId: payload.imageId,
           expiresIn: payload.expiresIn || 10000,
-          senderId: socket.userId
+          senderId: socket.anonId
         });
 
         socket.emit("group:messageAck");
@@ -951,15 +1070,17 @@ async function bootstrap() {
 
       const msg = payload && payload.msg;
       if (!msg || typeof msg !== "string") return;
+      const cleanMsg = sanitizeText(msg, config.message.maxLength);
+      if (!cleanMsg) return;
 
       noteMessageThroughput(store);
       recordHeatmap("action_message").catch(() => {});
       trackEvent("messagesSent");
 
       socket.to(roomId).emit("group:message", {
-        msg,
-        replyTo: (payload && payload.replyTo) || null,
-        senderId: socket.userId
+        msg: cleanMsg,
+        replyTo: sanitizeText(String((payload && payload.replyTo) || ""), 160) || null,
+        senderId: socket.anonId
       });
 
       socket.emit("group:messageAck");
@@ -967,32 +1088,22 @@ async function bootstrap() {
 
     socket.on("group:typing", () => {
       if (socket.groupRoomId) {
-        socket.to(socket.groupRoomId).emit("group:typing", { senderId: socket.userId });
+        if (!allowSession(socket, "gtype", 90, 60_000)) return;
+        socket.to(socket.groupRoomId).emit("group:typing", { senderId: socket.anonId });
       }
     });
 
     socket.on("start", (prefs) => {
       removeSocketFromGroupRoom(socket);
 
+      if (!allowSession(socket, "start", config.rateLimits.startPerMinute || 12, 60_000)) {
+        return socket.emit("system", "Too many start attempts. Wait a moment.");
+      }
+
       socket.gender = sanitizeText(prefs.gender, 10);
       socket.preference = sanitizeText(prefs.preference, 10);
       socket.language = sanitizeText(prefs.language, 20);
       socket.interests = Array.isArray(prefs.interests) ? prefs.interests.slice(0, 5) : [];
-
-      User.findOneAndUpdate(
-        { userId },
-        {
-          userId,
-          interests: socket.interests,
-          preferences: {
-            gender: socket.gender,
-            interestedIn: socket.preference,
-            language: socket.language
-          },
-          lastActive: new Date()
-        },
-        { upsert: true }
-      ).catch((e) => console.error("User Update Error:", e));
 
       trackEvent("chatStarts");
       recordHeatmap("action_chat_start").catch(() => {});
@@ -1004,6 +1115,14 @@ async function bootstrap() {
 
       const now = Date.now();
       socket.msgCount = (socket.msgCount || 0) + 1;
+
+      if (
+        !allowSession(socket, "msg", config.rateLimits.messagesPerMinute || 50, 60_000) ||
+        !allowIp(ip, "msg", 240, 60_000)
+      ) {
+        socket.emit("system", "âš ï¸ Rate limit. Slow down.");
+        return;
+      }
 
       if (socket.lastMsgAt && now - socket.lastMsgAt < 2000 && socket.msgCount > 6) {
         socket.emit("system", "⚠️ Slow down! Don't spam.");
@@ -1024,9 +1143,11 @@ async function bootstrap() {
         if (typeof img !== "string" || img.length > config.image.maxPayloadLength) {
           return socket.emit("system", "❌ Image invalid or too large.");
         }
+        if (!isAllowedImageDataUrl(img)) {
+          return socket.emit("system", "Unsupported image type.");
+        }
 
-        socket.imgCount = (socket.imgCount || 0) + 1;
-        if (socket.imgCount > config.rateLimits.imagesPerMinute) {
+        if (!allowSession(socket, "img", config.rateLimits.imagesPerMinute || 10, 60_000)) {
           return socket.emit("system", "❌ Image limit reached.");
         }
 
@@ -1035,7 +1156,7 @@ async function bootstrap() {
 
         socket.to(socket.room).emit("message", {
           img,
-          replyTo,
+          replyTo: sanitizeText(String(replyTo || ""), 160) || null,
           imageId,
           expiresIn: expiresIn || 10000,
           sender: "stranger",
@@ -1046,13 +1167,16 @@ async function bootstrap() {
         return;
       }
 
+      const cleanMsg = sanitizeText(String(msg || ""), config.message.maxLength);
+      if (!cleanMsg) return;
+
       trackEvent("messagesSent");
       recordHeatmap("action_message").catch(() => {});
       noteMessageThroughput(store);
 
       socket.to(socket.room).emit("message", {
-        msg,
-        replyTo,
+        msg: cleanMsg,
+        replyTo: sanitizeText(String(replyTo || ""), 160) || null,
         sender: "stranger",
         msgId: effectiveMsgId
       });
@@ -1083,7 +1207,7 @@ async function bootstrap() {
       const roomId = socket.room;
       const partnerId = socket.partnerId;
 
-      rememberSkip(store.recentSkips, socket.userId, partnerId, config.rematch.skipMemoryMs);
+      rememberSkip(store.recentSkips, socket.anonId, partnerId, config.rematch.skipMemoryMs);
       trackEvent("skips");
       recordHeatmap("action_skip").catch(() => {});
 
@@ -1113,9 +1237,12 @@ async function bootstrap() {
 
     socket.on("report", async ({ reason }) => {
       if (!socket.partnerId) return;
+      if (!allowSession(socket, "rep", config.rateLimits.reportsPerMinute || 5, 60_000)) {
+        return socket.emit("system", "Too many reports. Please wait.");
+      }
 
       await Report.create({
-        reporterId: socket.userId,
+        reporterId: socket.anonId,
         reportedId: socket.partnerId,
         reason: sanitizeText(reason, 100),
         roomId: socket.room
@@ -1126,14 +1253,16 @@ async function bootstrap() {
     });
 
     socket.on("typing", () => {
-      if (socket.room) socket.to(socket.room).emit("typing");
+      if (!socket.room) return;
+      if (!allowSession(socket, "type", 120, 60_000)) return;
+      socket.to(socket.room).emit("typing");
     });
 
     socket.on("disconnect", () => {
       removeSocketFromGroupRoom(socket);
       removeFromWaiting(store.waiting, socket.id);
 
-      const disconnectedUserId = socket.userId;
+      const disconnectedUserId = socket.anonId;
       const userSockets = store.users.get(disconnectedUserId);
 
       if (userSockets) userSockets.delete(socket.id);
@@ -1142,16 +1271,33 @@ async function bootstrap() {
         store.users.delete(disconnectedUserId);
 
         if (socket.room) {
+          const roomId = socket.room;
+          const partnerId = socket.partnerId;
           const timer = setTimeout(() => {
-            if (socket.room) {
-              socket.to(socket.room).emit("system", "Stranger disconnected.");
+            io.to(roomId).emit("system", "Stranger disconnected.");
+            store.activeRooms.delete(roomId);
+
+            const partnerSockets = partnerId ? store.users.get(partnerId) : null;
+            if (partnerSockets) {
+              partnerSockets.forEach((sid) => {
+                const p = io.sockets.sockets.get(sid);
+                if (p && p.room === roomId) {
+                  p.leave(roomId);
+                  p.room = null;
+                  p.partnerId = null;
+                  p.emit("clearChat");
+                  p.emit("system", "Stranger disconnected.");
+                  setTimeout(() => matchUser(p), 500);
+                }
+              });
             }
+
             store.reconnectBuffer.delete(disconnectedUserId);
           }, config.reconnect.gracePeriodMs);
 
           store.reconnectBuffer.set(disconnectedUserId, {
-            roomId: socket.room,
-            partnerId: socket.partnerId,
+            roomId,
+            partnerId,
             timer
           });
         }
@@ -1159,6 +1305,11 @@ async function bootstrap() {
 
       io.emit("online", store.users.size);
     });
+  });
+
+  app.use((req, res) => {
+    if (req.method !== "GET") return res.status(404).json({ ok: false });
+    res.status(404).sendFile(path.join(__dirname, "../public", "404.html"));
   });
 
   server.listen(config.port, () => {

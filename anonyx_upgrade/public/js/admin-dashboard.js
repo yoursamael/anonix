@@ -4,6 +4,13 @@
  * Resiliency Edition v3.0 - Event Delegation & Smart Logic.
  */
 
+const escapeAttr = (value) => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 const DashboardController = {
     isFetching: false,
     intervalTimer: null,
@@ -351,7 +358,7 @@ const DashboardController = {
                 .slice(0, 12)
                 .map(([k, v]) => `<div><code>${AdminAPI.sanitize(k)}</code> → ${v}</div>`)
                 .join("");
-            abEl.innerHTML = rows ? `<strong style="color:var(--text)">A/B &amp; funnel beacons</strong>${rows}` : "";
+            abEl.innerHTML = rows ? `<span class="admin-ab-title">A/B &amp; funnel beacons</span>${rows}` : "";
         }
     },
 
@@ -388,24 +395,28 @@ const DashboardController = {
         if (!tbody) return;
 
         if (!Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="color:var(--text-muted)">Backlog Clear.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="admin-td-muted">Backlog clear.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = data.map((r) => {
-            const rid = String(r.reportedId || "");
-            const reportId = String(r._id || "");
-            const sanitizedReason = AdminAPI.sanitize(r.reason || "No reason");
+            const ridRaw = String(r.reportedId || "");
+            const ridSafe = AdminAPI.sanitize(ridRaw);
+            const reportIdRaw = String(r._id || "");
+            const reportIdAttr = escapeAttr(reportIdRaw);
+            const reasonRaw = String(r.reason || "No reason");
+            const reasonSafe = AdminAPI.sanitize(reasonRaw);
+            const reasonAttr = escapeAttr(`Reported: ${reasonRaw}`);
             
             return `
                 <tr>
-                    <td><span class="badge"><code>${rid}</code></span></td>
-                    <td>${sanitizedReason}</td>
-                    <td style="color: var(--text-muted)">${r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : "-"}</td>
+                    <td><span class="badge"><code>${ridSafe}</code></span></td>
+                    <td>${reasonSafe}</td>
+                    <td class="admin-td-muted">${r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : "-"}</td>
                     <td>
-                        <div style="display:flex; gap:8px;">
-                            <button class="btn btn-outline btn-sm" data-action="ban" data-id="${rid}" data-reason="Reported: ${sanitizedReason}" style="color:var(--danger)">Ban</button>
-                            <button class="btn btn-outline btn-sm" data-action="resolve" data-id="${reportId}">Resolve</button>
+                        <div class="admin-actions-row">
+                            <button class="btn btn-outline btn-sm btn-outline-danger" data-action="ban" data-id="${escapeAttr(ridRaw)}" data-reason="${reasonAttr}">Ban</button>
+                            <button class="btn btn-outline btn-sm" data-action="resolve" data-id="${reportIdAttr}">Resolve</button>
                         </div>
                     </td>
                 </tr>
@@ -418,12 +429,13 @@ const DashboardController = {
         if (!tbody) return;
 
         if (!Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3" style="color:var(--text-muted)">Blacklist Empty.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="admin-td-muted">Blacklist empty.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = data.map((b) => {
-            const target = AdminAPI.sanitize(String(b.target || "-"));
+            const targetRaw = String(b.target || "-");
+            const target = AdminAPI.sanitize(targetRaw);
             const typeClass = b.type === "Network" ? "badge badge-warning" : "badge";
             const typeLabel = b.type || "System";
 
@@ -432,7 +444,7 @@ const DashboardController = {
                     <td><span class="${typeClass}">${typeLabel}</span></td>
                     <td><code>${target}</code></td>
                     <td>${AdminAPI.sanitize(b.reason || "Restriction Policy")}</td>
-                    <td><button class="btn btn-outline btn-sm" data-action="pardon" data-id="${target}">Pardon</button></td>
+                    <td><button class="btn btn-outline btn-sm" data-action="pardon" data-id="${escapeAttr(targetRaw)}">Pardon</button></td>
                 </tr>
             `;
         }).join("");
@@ -443,7 +455,7 @@ const DashboardController = {
         if (!tbody) return;
 
         if (!Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="color:var(--text-muted)">No active sessions.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="admin-td-muted">No active sessions.</td></tr>`;
             return;
         }
 
@@ -459,8 +471,8 @@ const DashboardController = {
                     <td><span class="badge">${AdminAPI.sanitize(rtype)}</span></td>
                     <td><code>${AdminAPI.sanitize(roomId)}</code></td>
                     <td>${users.map((u) => AdminAPI.sanitize(String(u))).join(" · ")}</td>
-                    <td style="color: var(--accent); font-weight:700;">${elapsed}s</td>
-                    <td><button class="btn btn-outline btn-danger btn-sm" data-action="terminate" data-id="${roomId.replace(/"/g, "")}">Close</button></td>
+                    <td class="admin-duration">${elapsed}s</td>
+                    <td><button class="btn btn-outline btn-danger btn-sm" data-action="terminate" data-id="${escapeAttr(roomId)}">Close</button></td>
                 </tr>
             `;
         }).join("");

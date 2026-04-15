@@ -2,142 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070b16">
   <title>Anonyx Pro | Secure Console Login</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/admin-login.css" />
+
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <style>
-    :root {
-      --bg: #0b0f1a;
-      --panel: #161c2d;
-      --input-bg: #0d111d;
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --text: #ffffff;
-      --text-muted: #94a3b8;
-      --border: #2d3748;
-      --danger: #ef4444;
-    }
-
-    * { box-sizing: border-box; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .login-container {
-      width: 400px;
-      padding: 40px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-      text-align: center;
-    }
-
-    .logo {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 800;
-      margin-bottom: 30px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      color: var(--primary);
-    }
-
-    h1 { font-size: 1.25rem; font-weight: 700; margin: 0 0 10px 0; }
-    p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px; }
-
-    .form-group { text-align: left; margin-bottom: 20px; }
-    label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
-    
-    .input-wrapper { position: relative; }
-    .input-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px; }
-    input {
-      width: 100%;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 12px 12px 12px 44px;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: 0.2s;
-    }
-    input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-
-    .btn {
-      width: 100%;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: 0.2s;
-      margin-top: 10px;
-    }
-    .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
-    .btn:active { transform: scale(0.98); }
-    .btn:disabled { opacity: 0.7; cursor: wait; }
-
-    #msg { color: var(--danger); font-size: 0.8rem; margin-top: 20px; min-height: 20px; font-weight: 500; }
-  </style>
 </head>
-<body>
+<body class="admin-login-route">
+  <div class="admin-auth">
+    <div class="admin-auth-card glass glass--strong glass--glow">
+      <div class="admin-auth-brand" aria-label="Anonyx Pro Admin">
+        <i data-lucide="shield-check" class="icon icon-xl" aria-hidden="true"></i>
+        <div class="admin-auth-title">ANONYX <span class="pro">PRO</span></div>
+      </div>
 
-  <div class="login-container">
-    <div class="logo">
-      <i data-lucide="shield-check" style="width: 48px; height: 48px;"></i>
-      <span>ANONYX <span style="color: #fff">PRO</span></span>
-    </div>
+      <h1>Administrative access</h1>
+      <p>Sign in to manage the platform infrastructure.</p>
 
-    <h1>Administrative Access</h1>
-    <p>Sign in to manage the platform infrastructure</p>
+      <div class="admin-auth-form" role="form" aria-label="Admin login">
+        <div>
+          <label class="admin-auth-label" for="username">Operator username</label>
+          <div class="admin-auth-field">
+            <i data-lucide="user" class="icon" aria-hidden="true"></i>
+            <input id="username" class="admin-auth-input" type="text" placeholder="e.g. admin" autocomplete="username" inputmode="text">
+          </div>
+        </div>
 
-    <div class="form-group">
-      <label>Operator Username</label>
-      <div class="input-wrapper">
-        <i data-lucide="user"></i>
-        <input id="username" type="text" placeholder="e.g. admin" autocomplete="username">
+        <div>
+          <label class="admin-auth-label" for="password">Security key</label>
+          <div class="admin-auth-field">
+            <i data-lucide="lock" class="icon" aria-hidden="true"></i>
+            <input id="password" class="admin-auth-input" type="password" placeholder="••••••••" autocomplete="current-password">
+          </div>
+        </div>
+
+        <button id="loginBtn" type="button" class="btn btn-primary admin-auth-btn">
+          <span id="loginBtnLabel">Verify credentials</span>
+          <span class="admin-auth-btn-icon" aria-hidden="true"><i data-lucide="corner-down-right" class="icon"></i></span>
+          <span id="loginBtnSpinner" class="loader-spin hidden" aria-hidden="true"></span>
+        </button>
+
+        <div id="msg" role="status" aria-live="polite"></div>
       </div>
     </div>
-
-    <div class="form-group">
-      <label>Security Key</label>
-      <div class="input-wrapper">
-        <i data-lucide="lock"></i>
-        <input id="password" type="password" placeholder="••••••••" autocomplete="current-password">
-      </div>
-    </div>
-
-    <button id="loginBtn" class="btn">
-      Verify Credentials <i data-lucide="corner-down-right" style="width: 18px;"></i>
-    </button>
-
-    <div id="msg"></div>
   </div>
 
   <script src="/js/admin-login.js"></script>
-  <script>lucide.createIcons();</script>
 </body>
 </html>

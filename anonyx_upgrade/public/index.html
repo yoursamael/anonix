@@ -21,20 +21,6 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/style.css" />
   <link rel="stylesheet" href="/mobile-rtl.css" />
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Anonyx",
-    "url": "https://anonyx.online/",
-    "description": "Anonymous chat platform for random conversations with strangers.",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://anonyx.online/chat",
-      "query-input": "required name=anonymous chat"
-    }
-  }
-  </script>
 </head>
 <body>
   <header class="site-header">
@@ -97,6 +83,39 @@
       </div>
     </section>
 
+    <section class="trust" id="trust">
+      <div class="container">
+        <h2 data-i18n="safety.title">Chat Safely</h2>
+        <p class="section-intro" data-i18n="safety.warning">
+          Never share passwords, bank details, home address, personal IDs, or anything you would regret leaking.
+          If someone is abusive, suspicious, or creepy, skip and report immediately.
+        </p>
+
+        <div class="card-grid">
+          <article class="card">
+            <h3>Anonymous sessions</h3>
+            <p>Server-issued sessions prevent impersonation without accounts, signups, or permanent profiles.</p>
+          </article>
+          <article class="card">
+            <h3>Room isolation</h3>
+            <p>Private rooms are randomized and scoped to a session to reduce hijacking and accidental cross-talk.</p>
+          </article>
+          <article class="card">
+            <h3>Abuse controls</h3>
+            <p>Per-IP and per-session limits, reporting tools, and admin moderation reduce spam and harassment.</p>
+          </article>
+        </div>
+
+        <details class="seo-details card glass glass--strong">
+          <summary>What is anonymous chat?</summary>
+          <div class="seo-body">
+            <p>Anonymous chat lets you talk to strangers online without sharing your real identity. People use it for casual conversation, passing time, and meeting new perspectives without social pressure.</p>
+            <p>Anonyx is built to keep the experience direct while adding practical upgrades like safer UX, matching controls, and moderation tools.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
     <section class="features" id="features">
       <div class="container">
         <h2 data-i18n="features.title">Why Use Anonyx?</h2>
@@ -145,31 +164,6 @@
       </div>
     </section>
 
-    <section class="about-seo-text">
-      <div class="narrow">
-        <h2>What Is Anonymous Chat?</h2>
-        <p>
-          Anonymous chat lets you talk to strangers online without sharing your real identity.
-          People use it for casual conversations, passing time, finding interesting people,
-          or just escaping noisy social apps.
-        </p>
-        <p>
-          Anonyx keeps the experience light and direct while adding practical upgrades like
-          safety controls, better matching, and a cleaner interface.
-        </p>
-      </div>
-    </section>
-
-    <section class="safety">
-      <div class="narrow">
-        <h2 data-i18n="safety.title">Chat Safely</h2>
-        <p data-i18n="safety.warning">
-          Never share passwords, bank details, home address, personal IDs, or anything you would regret leaking.
-          If someone is abusive, suspicious, or creepy, skip and report immediately.
-        </p>
-      </div>
-    </section>
-
     <section class="faq" id="faq">
       <div class="container">
         <h2 data-i18n="faq.title">FAQ</h2>
@@ -212,22 +206,6 @@
   <script src="/js/experiments.js"></script>
   <script src="/i18n/i18n.js"></script>
   <script src="/mobile-enhancements.js"></script>
-  <script>
-    (function () {
-      var uid = localStorage.getItem("anonyx_user");
-      if (window.AnonyxExperiments) AnonyxExperiments.bootstrap(uid || "anon");
-      document.querySelectorAll('a[href="/chat"], a.nav-cta, .hero-buttons a.btn-primary').forEach(function (a) {
-        a.addEventListener("click", function () {
-          if (!window.AnonyxExperiments) return;
-          try {
-            var ab = document.documentElement.dataset.anonyxAb;
-            var v = ab ? JSON.parse(ab) : {};
-            if (v.hero_cta) AnonyxExperiments.trackConversion("hero_cta", v.hero_cta);
-          } catch (e) {}
-          AnonyxExperiments.beacon("cta_click");
-        });
-      });
-    })();
-  </script>
+  <script src="/js/home.js"></script>
 </body>
 </html>

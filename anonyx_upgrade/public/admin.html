@@ -2,351 +2,212 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anonyx Pro | System Infrastructure Hub</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070b16">
+  <title>Anonyx Pro | Admin Console</title>
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/admin.css" />
+
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    :root {
-      --bg: #070b16; /* Deep Canvas */
-      --panel: rgba(15, 23, 42, 0.65); /* Translucent Slate */
-      --panel-elevated: rgba(30, 41, 59, 0.7);
-      --primary: #6366f1; /* Indigo */
-      --accent: #2dd4bf; /* Teal */
-      --danger: #ef4444;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --border: rgba(255, 255, 255, 0.08); /* Glass Stroke */
-      --input: rgba(15, 23, 42, 0.4);
-    }
-
-    * { box-sizing: border-box; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* --- Dynamic Mesh Backdrop --- */
-    .bg-mesh-container {
-      position: fixed; inset: 0; z-index: -1; overflow: hidden;
-      background: radial-gradient(circle at 50% 50%, #0c1222, #070b16);
-    }
-    .mesh-orb {
-      position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4;
-      animation: drift linear infinite;
-    }
-    .orb-1 { width: 40vw; height: 40vw; background: var(--primary); top: -10%; left: -10%; animation-duration: 25s; }
-    .orb-2 { width: 35vw; height: 35vw; background: var(--accent); bottom: -10%; right: -10%; animation-duration: 30s; animation-direction: reverse; }
-    .orb-3 { width: 30vw; height: 30vw; background: #a855f7; top: 40%; left: 30%; animation-duration: 20s; opacity: 0.2; }
-
-    @keyframes drift {
-      0% { transform: translate(0, 0) rotate(0deg); }
-      33% { transform: translate(10vw, 5vh) rotate(120deg); }
-      66% { transform: translate(-5vw, 15vh) rotate(240deg); }
-      100% { transform: translate(0, 0) rotate(360deg); }
-    }
-
-    /* Sidebar Navigation */
-    aside {
-      width: 280px;
-      background: var(--panel);
-      backdrop-filter: blur(24px);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      padding: 30px 20px;
-      z-index: 10;
-    }
-
-    .logo {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 800;
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 50px;
-      font-size: 1.25rem;
-    }
-
-    nav { flex: 1; }
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      color: var(--text-muted);
-      text-decoration: none;
-      border-radius: 12px;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      transition: 0.2s;
-    }
-    .nav-item:hover, .nav-item.active { background: var(--panel-elevated); color: #fff; }
-    .nav-item.active { color: var(--primary); }
-
-    .user-profile {
-      padding: 20px;
-      background: var(--panel-elevated);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border: 1px solid var(--border);
-    }
-    #sessUser { font-weight: 700; font-size: 0.85rem; color: #fff; }
-    .status-dot { 
-      width: 8px; height: 8px; background: var(--accent); border-radius: 50%; 
-      box-shadow: 0 0 10px var(--accent);
-      animation: pulse-breathing 2s infinite ease-in-out;
-    }
-    @keyframes pulse-breathing {
-      0% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px var(--accent); }
-      50% { transform: scale(1.4); opacity: 0.8; box-shadow: 0 0 20px var(--accent); }
-      100% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px var(--accent); }
-    }
-
-    /* Main Content Area */
-    main { flex: 1; overflow-y: auto; padding: 40px; position: relative; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-    h1 { font-family: 'Outfit', sans-serif; font-size: 1.75rem; margin: 0; }
-
-    /* Grid Layout */
-    .dashboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; }
-    .stat-card { background: var(--panel); backdrop-filter: blur(20px); border: 1px solid var(--border); padding: 24px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
-    .stat-card h3 { font-size: 0.75rem; color: var(--text-muted); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.05em; }
-    .stat-card .val { font-size: 2rem; font-weight: 800; font-family: 'Outfit'; text-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-
-    .chart-panel { background: var(--panel); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 30px; margin-bottom: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
-    .chart-panel h2 { font-size: 1rem; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-
-    /* Control Sections */
-    .content-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-    .section-card { background: var(--panel); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
-    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .section-header h2 { font-size: 1.1rem; margin: 0; }
-
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; font-size: 0.7rem; color: var(--text-muted); padding: 12px; border-bottom: 1px solid var(--border); text-transform: uppercase; }
-    td { padding: 14px 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-    .badge { background: var(--panel-elevated); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 600; font-family: monospace; }
-
-    .input-row { display: flex; gap: 10px; margin-bottom: 20px; }
-    input, textarea { background: var(--input); border: 1px solid var(--border); color: #fff; padding: 12px 16px; border-radius: 12px; outline: none; flex: 1; font-family: inherit; font-size: 0.9rem; }
-    input:focus { border-color: var(--primary); }
-
-    .btn { padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; border: 0; transition: 0.2s; font-size: 0.85rem; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: #fff; }
-    .btn-outline:hover { background: var(--panel-elevated); border-color: var(--primary); }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-danger { background: var(--danger); color: #fff; }
-    .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
-
-    /* Initial Sync Overlay */
-    #sync-loader {
-      position: absolute; inset: 0; z-index: 100;
-      background: var(--bg);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      transition: 0.5s;
-    }
-    .loader-spin {
-      width: 40px; height: 40px;
-      border: 3px solid rgba(99, 102, 241, 0.1);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 20px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
 </head>
-<body>
-
-  <!-- Mesh Background -->
-  <div class="bg-mesh-container">
-    <div class="mesh-orb orb-1"></div>
-    <div class="mesh-orb orb-2"></div>
-    <div class="mesh-orb orb-3"></div>
-  </div>
-
-  <aside>
-    <div class="logo">
-      <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
-      <span>ANONYX SYSTEM</span>
-    </div>
-
-    <nav>
-      <a href="#" class="nav-item active"><i data-lucide="bar-chart-3" style="width: 18px;"></i> Dashboard</a>
-      <a href="#" class="nav-item"><i data-lucide="users" style="width: 18px;"></i> User Directory</a>
-      <button id="flushBacklogBtn" class="nav-item" style="width:100%; border:0; background:transparent; cursor:pointer;"><i data-lucide="check-circle-2" style="width: 18px;"></i> Flush Backlog</button>
-    </nav>
-
-    <div class="user-profile" style="flex-direction: column; align-items: stretch; gap: 16px;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="status-dot"></div>
-        <div style="flex:1">
-          <div id="sessUser">Syncing...</div>
-          <div style="color:var(--text-muted); font-size:0.7rem">System Operator</div>
-        </div>
-      </div>
-      <button id="logoutBtn" class="btn btn-outline" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.8rem; border-color: rgba(239, 68, 68, 0.2); color: #ef4444;">
-        <i data-lucide="log-out" style="width: 14px;"></i> Logout Session
-      </button>
-    </div>
-  </aside>
-
-  <main>
-    <div id="sync-loader">
-      <div class="loader-spin"></div>
-      <div style="font-weight: 700; color: var(--text-muted);">Synchronizing Administrator Console...</div>
-    </div>
-
-    <div class="header">
-      <h1>Operational Health</h1>
-      <button id="refreshHeaderBtn" class="btn btn-outline" style="font-size: 0.75rem;"><i data-lucide="refresh-cw" style="width: 12px;"></i> Real-time Active</button>
-    </div>
-
-    <div class="dashboard-grid">
-      <div class="stat-card">
-        <h3>Live Connections</h3>
-        <div class="val" id="onlineCount">0</div>
-      </div>
-      <div class="stat-card">
-        <h3>Active Matches</h3>
-        <div class="val" id="matchesCount" style="color: var(--primary)">0</div>
-      </div>
-      <div class="stat-card">
-        <h3>Engagement Velocity</h3>
-        <div class="val" id="msgRate" style="color: var(--accent)">0%</div>
-      </div>
-      <div class="stat-card">
-        <h3>Queue (1:1)</h3>
-        <div class="val" id="liveQueue">0</div>
-      </div>
-      <div class="stat-card">
-        <h3>Group Rooms</h3>
-        <div class="val" id="liveGroups" style="color: #a855f7">0</div>
-      </div>
-      <div class="stat-card">
-        <h3>Msgs / min (live)</h3>
-        <div class="val" id="liveMsgPerMin" style="color: #f472b6">0</div>
-      </div>
-    </div>
-
-    <div class="chart-panel">
-      <h2><i data-lucide="radio" style="width: 18px; color: var(--accent)"></i> Socket stream <span id="liveSocketState" style="font-size:0.75rem;color:var(--text-muted);font-weight:400">polling</span></h2>
-      <div style="height: 220px;"><canvas id="liveChart"></canvas></div>
-    </div>
-
-    <div class="chart-panel">
-      <h2><i data-lucide="flame" style="width: 18px; color: #f97316"></i> Behavior heatmap (UTC hour • today)</h2>
-      <p style="color:var(--text-muted);font-size:0.8rem;margin:0 0 16px 0">Aggregated beacons: page views, chat starts, messages, skips, group joins, CTA clicks.</p>
-      <div style="height: 280px;"><canvas id="heatmapChart"></canvas></div>
-    </div>
-
-    <div class="section-card" style="margin-bottom: 32px;">
-      <div class="section-header">
-        <h2>Data export</h2>
-      </div>
-      <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0">Download operational datasets as CSV or JSON.</p>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;">
-        <button type="button" class="btn btn-outline btn-sm" id="exportAnalyticsCsv">Analytics CSV</button>
-        <button type="button" class="btn btn-outline btn-sm" id="exportAnalyticsJson">Analytics JSON</button>
-        <button type="button" class="btn btn-outline btn-sm" id="exportReportsCsv">Reports CSV</button>
-        <button type="button" class="btn btn-outline btn-sm" id="exportBansCsv">Bans CSV</button>
-      </div>
-      <div id="abStatsPanel" style="margin-top:20px;font-size:0.8rem;color:var(--text-muted)"></div>
-    </div>
-
-    <div class="content-sections">
-      <!-- Reports Section -->
-      <div class="section-card">
-        <div class="section-header">
-          <h2>Administrative Reports</h2>
-          <button id="refreshReportsBtn" class="btn btn-outline btn-sm">Refresh</button>
-        </div>
-        <div style="max-height: 400px; overflow-y: auto;">
-          <table id="reportsTable">
-            <thead>
-              <tr><th>Target</th><th>Reason</th><th>Time</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="4" style="color:var(--text-muted)">Querying backlog...</td></tr>
-            </tbody>
-          </table>
+<body class="admin-route">
+  <div class="admin-shell">
+    <aside class="admin-aside glass glass--strong glass--glow" aria-label="Admin navigation">
+      <div class="admin-brand">
+        <i data-lucide="shield-check" class="icon icon-lg" aria-hidden="true"></i>
+        <div>
+          <div class="admin-brand-name">ANONYX</div>
+          <div class="admin-brand-tag">Pro Console</div>
         </div>
       </div>
 
-      <!-- Restrictions Section -->
-      <div class="section-card">
-        <div class="section-header">
-          <h2>Active Bans</h2>
-        </div>
-        
-        <div class="input-row">
-            <input type="text" id="banTarget" placeholder="IP Address or User ID">
-        </div>
-        <div class="input-row">
-            <input type="text" id="banReason" placeholder="Justification for restriction">
-        </div>
-        <div class="input-row">
-            <button id="manualBanBtn" class="btn btn-primary">Revoke Access</button>
-            <button id="ipBanBtn" class="btn btn-danger">IP Ban</button>
-        </div>
+      <nav class="admin-nav">
+        <a href="#" class="nav-item active" aria-current="page">
+          <i data-lucide="bar-chart-3" class="icon" aria-hidden="true"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item">
+          <i data-lucide="users" class="icon" aria-hidden="true"></i>
+          <span>User Directory</span>
+        </a>
+        <button id="flushBacklogBtn" type="button" class="nav-item nav-item-btn">
+          <i data-lucide="check-circle-2" class="icon" aria-hidden="true"></i>
+          <span>Flush Backlog</span>
+        </button>
+      </nav>
 
-        <div style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
-          <table id="bansTable">
-            <thead>
-              <tr><th>Target</th><th>Justification</th><th>Control</th></tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="3" style="color:var(--text-muted)">Querying blacklist...</td></tr>
-            </tbody>
-          </table>
+      <div class="admin-user glass glass--strong" aria-label="Session info">
+        <div class="admin-user-top">
+          <span class="status-dot" aria-hidden="true"></span>
+          <div class="admin-user-meta">
+            <div id="sessUser">Operator</div>
+            <div class="admin-user-role">System Operator</div>
+          </div>
         </div>
+        <button id="logoutBtn" type="button" class="btn btn-danger btn-outline">
+          <i data-lucide="log-out" class="icon" aria-hidden="true"></i>
+          <span>Logout session</span>
+        </button>
       </div>
-    </div>
+    </aside>
 
-    <!-- Active Rooms Section -->
-    <div class="section-card" style="margin-top: 40px; grid-column: span 2;">
-        <div class="section-header">
-          <h2>Private Match Sessions</h2>
+    <main class="admin-main" aria-label="Admin dashboard">
+      <div id="sync-loader" class="admin-sync glass glass--strong">
+        <div class="admin-sync-title">Synchronizing Administrator Console...</div>
+      </div>
+
+      <header class="admin-header">
+        <div>
+          <h1>System overview</h1>
+          <p>Operational snapshot for active sessions, matching throughput, and moderation backlog.</p>
         </div>
-        <div style="max-height: 300px; overflow-y: auto;">
-          <table id="roomsTable">
+        <button id="refreshHeaderBtn" type="button" class="btn btn-secondary btn-sm">
+          <i data-lucide="refresh-cw" class="icon" aria-hidden="true"></i>
+          <span>Real-time active</span>
+        </button>
+      </header>
+
+      <section class="admin-stats" aria-label="Key metrics">
+        <div class="stat-card glass glass--strong">
+          <div class="stat-label">Active users</div>
+          <div class="stat-value stat-value--success" id="onlineCount">0</div>
+        </div>
+        <div class="stat-card glass glass--strong">
+          <div class="stat-label">Matches</div>
+          <div class="stat-value stat-value--champagne" id="matchesCount">0</div>
+        </div>
+        <div class="stat-card glass glass--strong">
+          <div class="stat-label">Match rate</div>
+          <div class="stat-value stat-value--blue" id="msgRate">0%</div>
+        </div>
+        <div class="stat-card glass glass--strong">
+          <div class="stat-label">Queue</div>
+          <div class="stat-value" id="liveQueue">0</div>
+        </div>
+        <div class="stat-card glass glass--strong">
+          <div class="stat-label">Group rooms</div>
+          <div class="stat-value stat-value--violet" id="liveGroups">0</div>
+        </div>
+        <div class="stat-card glass glass--strong">
+          <div class="stat-label">Msgs / min (live)</div>
+          <div class="stat-value stat-value--pink" id="liveMsgPerMin">0</div>
+        </div>
+      </section>
+
+      <section class="admin-grid" aria-label="Charts">
+        <div class="admin-panel glass glass--strong">
+          <h2>
+            <i data-lucide="radio" class="icon" aria-hidden="true"></i>
+            Socket stream <span id="liveSocketState" class="admin-inline-muted">polling</span>
+          </h2>
+          <div class="chart-canvas chart-canvas--sm">
+            <canvas id="liveChart"></canvas>
+          </div>
+        </div>
+
+        <div class="admin-panel glass glass--strong">
+          <h2>
+            <i data-lucide="flame" class="icon" aria-hidden="true"></i>
+            Behavior heatmap <span class="admin-inline-muted">(UTC hour • today)</span>
+          </h2>
+          <p class="admin-section-sub">Aggregated beacons: page views, chat starts, messages, skips, group joins, CTA clicks.</p>
+          <div class="chart-canvas chart-canvas--md">
+            <canvas id="heatmapChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section admin-panel glass glass--strong" aria-label="Data export">
+        <div class="admin-section-head">
+          <h2><i data-lucide="download" class="icon" aria-hidden="true"></i> Data export</h2>
+        </div>
+        <p class="admin-section-sub">Download operational datasets as CSV or JSON.</p>
+        <div class="admin-btn-row">
+          <button type="button" class="btn btn-outline btn-sm" id="exportAnalyticsCsv">Analytics CSV</button>
+          <button type="button" class="btn btn-outline btn-sm" id="exportAnalyticsJson">Analytics JSON</button>
+          <button type="button" class="btn btn-outline btn-sm" id="exportReportsCsv">Reports CSV</button>
+          <button type="button" class="btn btn-outline btn-sm" id="exportBansCsv">Bans CSV</button>
+        </div>
+        <div id="abStatsPanel" aria-live="polite"></div>
+      </section>
+
+      <section class="admin-grid" aria-label="Moderation">
+        <div class="admin-panel glass glass--strong">
+          <div class="admin-section-head">
+            <h2><i data-lucide="flag" class="icon" aria-hidden="true"></i> Administrative reports</h2>
+            <button id="refreshReportsBtn" type="button" class="btn btn-outline btn-sm">Refresh</button>
+          </div>
+          <div class="scroll-box">
+            <table id="reportsTable" aria-label="Reports table">
+              <thead>
+                <tr><th>Target</th><th>Reason</th><th>Time</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" class="admin-td-muted">Querying backlog...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-panel glass glass--strong">
+          <div class="admin-section-head">
+            <h2><i data-lucide="ban" class="icon" aria-hidden="true"></i> Active bans</h2>
+          </div>
+
+          <div class="admin-form-row">
+            <input type="text" id="banTarget" placeholder="IP Address or User ID" aria-label="Ban target" />
+            <input type="text" id="banReason" placeholder="Justification for restriction" aria-label="Ban reason" />
+            <div class="admin-actions-row">
+              <button id="manualBanBtn" class="btn btn-primary btn-sm" type="button">Revoke access</button>
+              <button id="ipBanBtn" class="btn btn-danger btn-sm" type="button">IP ban</button>
+            </div>
+          </div>
+
+          <div class="scroll-box mt-3">
+            <table id="bansTable" aria-label="Bans table">
+              <thead>
+                <tr><th>Type</th><th>Target</th><th>Justification</th><th>Control</th></tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" class="admin-td-muted">Querying blacklist...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section admin-panel glass glass--strong" aria-label="Active sessions">
+        <div class="admin-section-head">
+          <h2><i data-lucide="activity" class="icon" aria-hidden="true"></i> Private match sessions</h2>
+        </div>
+        <div class="scroll-box scroll-box--sm">
+          <table id="roomsTable" aria-label="Rooms table">
             <thead>
               <tr><th>Type</th><th>Room ID</th><th>Participants</th><th>Duration</th><th>Command</th></tr>
             </thead>
             <tbody>
-              <tr><td colspan="5" style="color:var(--text-muted)">Querying active sessions...</td></tr>
+              <tr><td colspan="5" class="admin-td-muted">Querying active sessions...</td></tr>
             </tbody>
           </table>
         </div>
-    </div>
+      </section>
 
-    <!-- Global Broadcast -->
-    <div class="section-card" style="margin-top: 40px;">
-        <div class="section-header">
-          <h2>Global System Broadcast</h2>
+      <section class="admin-section admin-panel glass glass--strong" aria-label="Broadcast">
+        <div class="admin-section-head">
+          <h2><i data-lucide="megaphone" class="icon" aria-hidden="true"></i> Global system broadcast</h2>
         </div>
-        <div class="input-row">
-            <textarea id="announceMsg" placeholder="System-wide message..." rows="2"></textarea>
-            <button id="broadcastBtn" class="btn btn-primary" style="height: fit-content; align-self: flex-end;">Broadcast</button>
+        <div class="admin-form-row">
+          <textarea id="announceMsg" placeholder="System-wide message..." rows="2" aria-label="Broadcast message"></textarea>
+          <div class="admin-actions-row">
+            <button id="broadcastBtn" class="btn btn-primary btn-sm" type="button">Broadcast</button>
+          </div>
         </div>
-    </div>
-  </main>
+      </section>
+    </main>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/admin-api.js"></script>
